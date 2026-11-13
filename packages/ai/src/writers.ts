@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import { renderSystemDesignArtifacts } from "./system-design.renderer";
 import type { GenerateRequest, GenerateResult } from "./types";
 
 export interface WriteFileOptions {
@@ -19,6 +20,7 @@ export interface WriteFileOptions {
 export interface WriteResult {
   success: boolean;
   filePath: string;
+  generatedFiles?: string[];
   error?: string;
 }
 
@@ -113,9 +115,19 @@ export async function writeDocumentationFile(
     // Escreve o arquivo
     await fs.writeFile(filePath, result.content, "utf-8");
 
+    const generatedFiles = [filePath];
+    if (result.kind === "diagram") {
+      const systemDesignFiles = await renderSystemDesignArtifacts(
+        filePath,
+        result.content,
+      );
+      generatedFiles.push(...systemDesignFiles);
+    }
+
     return {
       success: true,
       filePath,
+      generatedFiles,
     };
   } catch (error) {
     return {

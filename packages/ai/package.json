@@ -11,8 +11,10 @@
         }
     },
     "dependencies": {
+        "@mermaid-js/mermaid-cli": "11.17.1",
         "@repo/rag": "0.0.1",
-        "langsmith": "^0.3.82"
+        "langsmith": "^0.3.82",
+        "puppeteer": "25.17.0"
     },
     "devDependencies": {
         "@types/node": "^20.0.0"

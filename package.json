@@ -43,5 +43,8 @@
     "@langchain/langgraph": "^1.0.2",
     "langchain": "^1.1.1",
     "vitest": "^4.0.13"
+  },
+  "allowScripts": {
+    "puppeteer@25.17.0": true
   }
 }

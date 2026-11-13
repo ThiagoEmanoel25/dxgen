@@ -10,5 +10,5 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   // Mark these packages as external to avoid bundling CommonJS require() calls
-  external: ["dotenv", "prompts"],
+  external: ["@mermaid-js/mermaid-cli", "dotenv", "prompts"],
 });

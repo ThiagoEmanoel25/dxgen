@@ -207,8 +207,12 @@ export async function handleGenerate(): Promise<void> {
       process.exit(1);
     }
 
-    // Add generated file to list
-    addGeneratedFile?.(writeResult.filePath);
+    // Add every generated document and system-design artifact to the list
+    for (const generatedFile of writeResult.generatedFiles ?? [
+      writeResult.filePath,
+    ]) {
+      addGeneratedFile?.(generatedFile);
+    }
 
     // Updating usage (silently, don't show in UI)
     try {
