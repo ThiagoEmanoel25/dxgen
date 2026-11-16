@@ -1,4 +1,4 @@
-import { runRagPipeline, scanProjectFiles, chunkProjectFiles } from "@repo/rag";
+import { prepareProjectChunks, runRagPipeline } from "@repo/rag";
 import type { Document } from "@langchain/core/documents";
 import type { PRContext } from "./pr-context";
 import { buildPRFocusedQuery } from "./pr-context";
@@ -43,13 +43,8 @@ export async function getRagDocumentsForPR(
 
     // Do scan and chunk locally (doesn't need keys)
     console.log(`[RAG] Scanning files in ${rootDir}...`);
-    const scanResult = await scanProjectFiles({
-      rootDir,
-    });
-    console.log(`[RAG] Scanned ${scanResult.files.length} files`);
-
-    console.log(`[RAG] Chunking files...`);
-    const chunks = await chunkProjectFiles(scanResult.files);
+    console.log(`[RAG] Scanning and chunking files...`);
+    const chunks = await prepareProjectChunks(rootDir);
     console.log(`[RAG] Created ${chunks.length} chunks`);
 
     // Send chunks to Edge Function for embeddings + Pinecone

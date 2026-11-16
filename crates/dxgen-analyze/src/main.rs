@@ -301,10 +301,19 @@ fn analyze(root: &Path, max_depth: usize) -> Result<AnalyzerOutput, String> {
     })
 }
 
-fn parse_args(args: impl IntoIterator<Item = String>) -> Result<(PathBuf, usize), String> {
+#[derive(PartialEq)]
+enum OutputFormat {
+    Json,
+    Files,
+}
+
+fn parse_args(
+    args: impl IntoIterator<Item = String>,
+) -> Result<(PathBuf, usize, OutputFormat), String> {
     let mut args = args.into_iter();
     let mut repository = None;
     let mut max_depth = 3;
+    let mut format = OutputFormat::Json;
 
     while let Some(argument) = args.next() {
         match argument.as_str() {
@@ -319,9 +328,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<(PathBuf, usize)
                     .ok_or_else(|| "--max-depth must be a positive integer".to_string())?;
             }
             "--format" => {
-                if args.next().as_deref() != Some("json") {
-                    return Err("--format must be json".to_string());
-                }
+                format = match args.next().as_deref() {
+                    Some("json") => OutputFormat::Json,
+                    Some("files") => OutputFormat::Files,
+                    _ => return Err("--format must be json or files".to_string()),
+                };
             }
             value if value.starts_with('-') => {
                 return Err(format!("Unknown option: {value}"));
@@ -329,20 +340,39 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<(PathBuf, usize)
             value if repository.is_none() => repository = Some(PathBuf::from(value)),
             _ => {
                 return Err(
-                    "Usage: dxgen-analyze <repository-path> [--max-depth 3] [--format json]"
+                    "Usage: dxgen-analyze <repository-path> [--max-depth 3] [--format json|files]"
                         .to_string(),
                 );
             }
         }
     }
 
-    repository.map(|path| (path, max_depth)).ok_or_else(|| {
-        "Usage: dxgen-analyze <repository-path> [--max-depth 3] [--format json]".to_string()
-    })
+    repository
+        .map(|path| (path, max_depth, format))
+        .ok_or_else(|| {
+            "Usage: dxgen-analyze <repository-path> [--max-depth 3] [--format json|files]"
+                .to_string()
+        })
 }
 
 fn run() -> Result<(), String> {
-    let (repository, max_depth) = parse_args(env::args().skip(1))?;
+    let (repository, max_depth, format) = parse_args(env::args().skip(1))?;
+    if format == OutputFormat::Files {
+        if !repository.is_dir() {
+            return Err(format!(
+                "Repository path is not a readable directory: {}",
+                normalize_path(&repository)
+            ));
+        }
+        let repository = std::path::absolute(repository).map_err(|error| error.to_string())?;
+        let paths = scan_project(&repository)?
+            .into_iter()
+            .map(|file| file.path)
+            .collect::<Vec<_>>();
+        let json = serde_json::to_string(&paths).map_err(|error| error.to_string())?;
+        println!("{json}");
+        return Ok(());
+    }
     let output = analyze(&repository, max_depth)?;
     let json = serde_json::to_string_pretty(&output).map_err(|error| error.to_string())?;
     println!("{json}");
@@ -391,6 +421,28 @@ mod tests {
     #[test]
     fn output_is_deterministic() {
         assert_eq!(normalized_output(), normalized_output());
+    }
+
+    #[test]
+    fn lists_every_discovered_file_for_parity_diagnostics() {
+        let paths = scan_project(&fixture_path())
+            .unwrap()
+            .into_iter()
+            .map(|file| file.path)
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            paths,
+            [
+                "README.md",
+                "broken/package.json",
+                "config/app.yaml",
+                "docs/guide.md",
+                "package.json",
+                "src/index.ts",
+                "tsconfig.json",
+            ]
+        );
     }
 
     #[test]

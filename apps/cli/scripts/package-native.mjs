@@ -8,14 +8,22 @@ const cliRoot = path.resolve(
   "..",
 );
 const repositoryRoot = path.resolve(cliRoot, "../..");
-const executable =
+const analyzerExecutable =
   process.platform === "win32" ? "dxgen-analyze.exe" : "dxgen-analyze";
+const ragExecutable =
+  process.platform === "win32" ? "dxgen-rag.exe" : "dxgen-rag";
 const analyzerArgument = process.argv.indexOf("--analyzer");
+const ragArgument = process.argv.indexOf("--rag");
 const outputArgument = process.argv.indexOf("--output");
 const analyzerPath = path.resolve(
   analyzerArgument >= 0 && process.argv[analyzerArgument + 1]
     ? process.argv[analyzerArgument + 1]
-    : path.join(repositoryRoot, "target/release", executable),
+    : path.join(repositoryRoot, "target/release", analyzerExecutable),
+);
+const ragPath = path.resolve(
+  ragArgument >= 0 && process.argv[ragArgument + 1]
+    ? process.argv[ragArgument + 1]
+    : path.join(repositoryRoot, "target/release", ragExecutable),
 );
 const outputPath = path.resolve(
   outputArgument >= 0 && process.argv[outputArgument + 1]
@@ -44,7 +52,16 @@ try {
       stagingPath,
       "native",
       `${process.platform}-${process.arch}`,
-      executable,
+      analyzerExecutable,
+    ),
+  );
+  await cp(
+    ragPath,
+    path.join(
+      stagingPath,
+      "native",
+      `${process.platform}-${process.arch}`,
+      ragExecutable,
     ),
   );
 

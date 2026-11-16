@@ -18,7 +18,9 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "test:analyzer-parity": "node scripts/check-analyzer-parity.mjs",
-    "benchmark:analyzers": "node scripts/benchmark-analyzers.mjs"
+    "benchmark:analyzers": "node scripts/benchmark-analyzers.mjs",
+    "test:rag-parity": "node scripts/check-rag-parity.mjs",
+    "benchmark:rag": "node scripts/benchmark-rag.mjs"
   },
   "keywords": [
     "documentation",
