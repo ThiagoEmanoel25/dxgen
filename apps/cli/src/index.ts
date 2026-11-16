@@ -5,9 +5,11 @@ import { handleGenerate } from "./handlers/generate.handler";
 import { handleLogin } from "./handlers/login.handler";
 import { handleLogout } from "./handlers/logout.handler";
 import { handleStatus } from "./handlers/status.handler";
+import { configurePackagedAnalyzer } from "./lib/analyzer";
 import { loadEnv } from "./lib/env";
 
 loadEnv();
+configurePackagedAnalyzer(import.meta.url);
 
 const args = process.argv.slice(2);
 const command = args[0];

@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsup",
-    "lint": "biome check ."
+    "lint": "biome check .",
+    "package:native": "node scripts/package-native.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@repo/ai": "1.0.0",

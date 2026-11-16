@@ -17,7 +17,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "test:analyzer-parity": "node scripts/check-analyzer-parity.mjs"
+    "test:analyzer-parity": "node scripts/check-analyzer-parity.mjs",
+    "benchmark:analyzers": "node scripts/benchmark-analyzers.mjs"
   },
   "keywords": [
     "documentation",
