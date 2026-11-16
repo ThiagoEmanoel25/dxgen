@@ -222,6 +222,7 @@ Para mais detalhes, consulte [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 ## 📚 Documentação Adicional
 
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) – Documentação detalhada da arquitetura
+- [`docs/RUST_MIGRATION_SPEC.md`](docs/RUST_MIGRATION_SPEC.md) – Plano, critérios de paridade e benchmark da migração incremental para Rust
 - [`docs/README.md`](docs/README.md) – Documentação geral do projeto
 - [`apps/github-app/README.md`](apps/github-app/README.md) – Guia do GitHub App
 - [`packages/rag/README.md`](packages/rag/README.md) – Documentação do pacote RAG
