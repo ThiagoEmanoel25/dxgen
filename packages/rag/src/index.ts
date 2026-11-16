@@ -3,6 +3,11 @@ export { createEmbeddings } from "./embeddings.js";
 export { getRagEnvConfig } from "./env.js";
 export { scanProjectFiles } from "./file-scanner.js";
 export {
+  chunkProjectWithRust,
+  parseRustRagOutput,
+  prepareProjectChunks,
+} from "./native-chunker.js";
+export {
     buildIndex,
     resetPineconeNamespace,
     syncChunksToPinecone

@@ -1,24 +1,12 @@
-import { chunkProjectFiles } from "./chunker.js";
-import { scanProjectFiles } from "./file-scanner.js";
+import { prepareProjectChunks } from "./native-chunker.js";
 import { buildIndex, resetPineconeNamespace } from "./pinecone-sync.js";
 import { createRetriever } from "./retriever.js";
 import type {
   RagPipelineOptions,
   RagPipelineResult,
-  ScanOptions,
   SyncOptions,
   SyncSummary,
 } from "./types.js";
-
-const buildScanOptions = (
-  rootDir: string,
-  overrides: RagPipelineOptions["scanOptions"],
-): ScanOptions => ({
-  rootDir,
-  includeExtensions: overrides?.includeExtensions,
-  excludeGlobs: overrides?.excludeGlobs,
-  maxFileSizeBytes: overrides?.maxFileSizeBytes,
-});
 
 export const runRagPipeline = async (
   options: RagPipelineOptions,
@@ -31,11 +19,9 @@ export const runRagPipeline = async (
   let syncSummary: SyncSummary | undefined;
 
   if (options.sync?.enabled) {
-    const scanResult = await scanProjectFiles(
-      buildScanOptions(rootDir, options.scanOptions),
-    );
-    const chunks = await chunkProjectFiles(
-      scanResult.files,
+    const chunks = await prepareProjectChunks(
+      rootDir,
+      options.scanOptions,
       options.chunkOptions,
     );
 

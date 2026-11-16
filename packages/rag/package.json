@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --tsconfig tsconfig.build.json",
+    "chunk-project": "tsx src/chunk-project.ts",
     "dev": "tsx watch src/index.ts",
     "lint": "biome check src",
     "test": "vitest"
