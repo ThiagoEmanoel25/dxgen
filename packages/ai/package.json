@@ -20,8 +20,10 @@
         "@types/node": "^20.0.0"
     },
     "scripts": {
+        "analyze": "node --conditions=source --import tsx src/analyze.ts",
         "build": "tsup",
-        "dev": "tsup --watch"
+        "dev": "tsup --watch",
+        "test": "vitest run"
     },
     "private": true
 }

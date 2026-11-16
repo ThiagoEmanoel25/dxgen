@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "rootPath": "<ROOT>",
+  "packages": [
+    {
+      "path": ".",
+      "name": "baseline-fixture",
+      "private": true,
+      "scripts": {
+        "test": "vitest"
+      },
+      "dependencies": {
+        "alpha": "1.0.0"
+      }
+    }
+  ],
+  "configFiles": {
+    "tsconfigs": [
+      {
+        "path": "tsconfig.json",
+        "content": "{\n  \"compilerOptions\": {\n    \"strict\": true\n  }\n}\n"
+      }
+    ],
+    "ciConfigs": [],
+    "otherConfigs": [
+      {
+        "path": "config/app.yaml",
+        "content": "name: baseline\n"
+      }
+    ]
+  },
+  "structure": [
+    {
+      "name": "README.md",
+      "path": "README.md",
+      "type": "file"
+    },
+    {
+      "name": "broken",
+      "path": "broken",
+      "type": "dir",
+      "children": []
+    },
+    {
+      "name": "config",
+      "path": "config",
+      "type": "dir",
+      "children": []
+    },
+    {
+      "name": "docs",
+      "path": "docs",
+      "type": "dir",
+      "children": []
+    },
+    {
+      "name": "package.json",
+      "path": "package.json",
+      "type": "file"
+    },
+    {
+      "name": "src",
+      "path": "src",
+      "type": "dir",
+      "children": []
+    },
+    {
+      "name": "tsconfig.json",
+      "path": "tsconfig.json",
+      "type": "file"
+    }
+  ],
+  "existingDocs": [
+    {
+      "path": "README.md",
+      "content": "# Baseline fixture\n\nThis content is part of the analyzer contract.\n"
+    },
+    {
+      "path": "docs/guide.md",
+      "content": "# Guide\n\nNested documentation.\n"
+    }
+  ]
+}

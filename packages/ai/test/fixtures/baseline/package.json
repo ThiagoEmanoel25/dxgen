@@ -1,0 +1,10 @@
+{
+  "name": "baseline-fixture",
+  "private": true,
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "alpha": "1.0.0"
+  }
+}
