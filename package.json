@@ -16,7 +16,8 @@
     "dxgen": "tsx apps/cli/src/index.ts",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "test:analyzer-parity": "node scripts/check-analyzer-parity.mjs"
   },
   "keywords": [
     "documentation",

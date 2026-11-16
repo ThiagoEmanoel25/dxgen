@@ -17,8 +17,8 @@ The first implementation must reproduce the existing TypeScript `ProjectContext`
 | Migration spec | Done | This document |
 | TypeScript baseline command | Done | `npm run --silent analyze --workspace @repo/ai -- <repository-path> --max-depth 3 --format json` (`packages/ai/src/analyze.ts`) |
 | Golden repository fixtures | Done | `npm test --workspace @repo/ai` (`packages/ai/test/fixtures/baseline`, `packages/ai/test/golden/baseline.json`) |
-| Rust workspace and analyzer | Pending | — |
-| TypeScript/Rust parity test | Pending | — |
+| Rust workspace and analyzer | Done | `cargo test -p dxgen-analyze` (`crates/dxgen-analyze`) |
+| TypeScript/Rust parity test | Done | `npm run test:analyzer-parity` (`scripts/check-analyzer-parity.mjs`) |
 | Benchmark harness | Pending | — |
 | Benchmark results | Pending | — |
 | Migration decision | Pending | — |
@@ -218,4 +218,4 @@ Create a dated result under `docs/benchmarks/` when the harness exists:
 
 ## 12. Next action
 
-Create the Rust workspace and analyzer against the checked-in TypeScript golden output. Preserve the captured TypeScript behavior unless an intentional contract change is documented and approved.
+Create the benchmark harness and select the small, medium, and large repository corpus. Do not run or interpret performance results until the corpus is recorded.
