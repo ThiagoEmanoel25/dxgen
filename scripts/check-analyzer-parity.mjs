@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { chmod, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  rm,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -8,11 +15,15 @@ import process from "node:process";
 const root = process.cwd();
 
 const run = (command, args, fixture) =>
-  spawnSync(command, [...args, fixture, "--max-depth", "3", "--format", "json"], {
-    cwd: root,
-    encoding: "utf8",
-    env: process.env,
-  });
+  spawnSync(
+    command,
+    [...args, fixture, "--max-depth", "3", "--format", "json"],
+    {
+      cwd: root,
+      encoding: "utf8",
+      env: process.env,
+    },
+  );
 
 const typescriptArgs = [
   "run",
