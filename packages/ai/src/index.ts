@@ -2,6 +2,7 @@ import type { Document } from "@langchain/core/documents";
 
 import { executeDocumentationAgent } from "./agent";
 import { buildProjectContext } from "./context/project-context";
+import { buildRustProjectContext } from "./context/rust-project-context";
 import { detectStack } from "./tools/stack-detector.tool";
 import type {
   DetectedStack,
@@ -14,6 +15,7 @@ export interface GenerateOptions {
   documents: Document[];
   stack?: DetectedStack;
   projectContext?: ProjectContext;
+  analyzerPath?: string;
 }
 
 /**
@@ -46,10 +48,18 @@ export async function runGenerateCommand(
   // Step 2: Build deterministic project context if not provided
   let projectContext = providedContext;
   if (!projectContext) {
-    projectContext = await buildProjectContext(request.project.rootPath, {
-      stack,
-      maxStructureDepth: 5, // Increased from 3 to 5 for better structure accuracy
-    });
+    const analyzerPath =
+      options.analyzerPath ?? process.env.DXGEN_ANALYZER_PATH;
+    projectContext = analyzerPath
+      ? await buildRustProjectContext(request.project.rootPath, {
+          binaryPath: analyzerPath,
+          stack,
+          maxStructureDepth: 5,
+        })
+      : await buildProjectContext(request.project.rootPath, {
+          stack,
+          maxStructureDepth: 5,
+        });
   }
 
   // Step 3: Execute the AI agent
@@ -71,10 +81,10 @@ export async function runGenerateCommand(
 export { detectStack } from "./tools/stack-detector.tool";
 export type * from "./types";
 export * from "./writers";
-export { buildProjectContext };
+export { buildProjectContext, buildRustProjectContext };
 
-// Export generators
-export { generateSummary } from "./generators/summary.generator";
-export { generateReadme } from "./generators/readme.generator";
 export { generateApiDocs } from "./generators/api-docs.generator";
 export { generateDiagrams } from "./generators/diagram.generator";
+export { generateReadme } from "./generators/readme.generator";
+// Export generators
+export { generateSummary } from "./generators/summary.generator";

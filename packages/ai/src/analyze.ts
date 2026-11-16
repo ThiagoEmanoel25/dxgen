@@ -4,6 +4,8 @@ import { stat } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
+import { scanProjectFiles } from "@repo/rag";
+
 import { buildProjectContext } from "./context/project-context";
 import type {
   ProjectContext,
@@ -84,17 +86,24 @@ export async function main(args = process.argv.slice(2)): Promise<void> {
   const repositoryPath = positionals[0];
   if (positionals.length !== 1 || !repositoryPath) {
     throw new Error(
-      "Usage: dxgen-analyze <repository-path> [--max-depth 3] [--format json]",
+      "Usage: dxgen-analyze <repository-path> [--max-depth 3] [--format json|files]",
     );
   }
-  if (values.format !== "json") {
-    throw new Error("--format must be json");
+  if (values.format !== "json" && values.format !== "files") {
+    throw new Error("--format must be json or files");
   }
 
   const rootPath = path.resolve(repositoryPath);
   const rootStats = await stat(rootPath).catch(() => undefined);
   if (!rootStats?.isDirectory()) {
     throw new Error(`Repository path is not a readable directory: ${rootPath}`);
+  }
+  if (values.format === "files") {
+    const { files } = await scanProjectFiles({ rootDir: rootPath });
+    process.stdout.write(
+      `${JSON.stringify(files.map((file) => normalizePath(file.relativePath)).sort())}\n`,
+    );
+    return;
   }
   const context = await buildProjectContext(rootPath, {
     maxStructureDepth: parseMaxDepth(values["max-depth"]),

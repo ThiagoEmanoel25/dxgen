@@ -1,5 +1,72 @@
 # DXGen Rust Migration Decisions
 
+## 2026-11-16 — Phase 3 hybrid CLI boundary
+
+### Decision
+
+- The shipping command remains the existing TypeScript CLI. It continues to own login, Supabase access, prompts, terminal progress, RAG, AI orchestration, provider calls, and generated-file writes.
+- Rust owns only deterministic repository analysis. The existing versioned JSON subprocess contract is the boundary; no provider, authentication, frontend, or GitHub App code moves to Rust.
+- A Rust command wrapper around the TypeScript CLI was rejected because it would add startup and signal-forwarding complexity without moving product behavior or removing the Node requirement.
+- The CLI now auto-discovers `native/<platform>-<architecture>/dxgen-analyze[.exe]` beside its bundle. `DXGEN_ANALYZER_PATH` remains the explicit override, and absence of both paths preserves the TypeScript fallback.
+- `npm run package:native --workspace @dxgen/cli` stages the existing CLI bundle and the current release analyzer into an npm-package layout. It does not compile, download, or guess a binary.
+- Phase 4 and provider migration are not authorized by this decision. RAG and AI remain TypeScript unless a separate correctness contract and benchmark justify changing them.
+
+### Evidence
+
+- Passed: `npm test --workspace @dxgen/cli` (3 analyzer-discovery tests).
+- Passed: `npm run build --workspace @dxgen/cli`.
+- Passed: `cargo build --release -p dxgen-analyze`.
+- Passed: current-platform package staging and `npm pack`; the inspected artifact contains executable `dist/index.js` and `native/darwin-arm64/dxgen-analyze`.
+- Passed: `node apps/cli/dist/index.js --version` (`dxgen v0.0.1`).
+
+### Remaining risks and work
+
+- Only the current `darwin-arm64` artifact was produced and inspected. No Linux, Windows, x64, or cross-platform install result exists, so the release matrix remains pending.
+- The staged CLI keeps its existing npm workspace dependencies. External installation must be tested together with the repository's package publication strategy before calling the artifact generally distributable.
+- The product CLI still requires Node; only the analyzer satisfies the no-Node release gate.
+- Full CLI TypeScript checking remains blocked by pre-existing errors in `apps/cli/src/components/Spinner.tsx:64` and `packages/ai/src/system-design.renderer.ts:93`. The new analyzer-discovery files have no remaining reported type errors.
+
+## 2026-11-16 — Phase 2 CLI integration
+
+### Decisions
+
+- `runGenerateCommand` selects the Rust analyzer when `DXGEN_ANALYZER_PATH` is configured and otherwise preserves the existing TypeScript path.
+- The adapter invokes the binary without a shell, validates the versioned JSON boundary, removes `schemaVersion`, and attaches the already-detected stack so downstream generators receive the same `ProjectContext` shape.
+- A configured Rust failure is surfaced to the CLI. Silent fallback is intentionally limited to the absence of configuration; it must not hide a broken binary or incompatible schema.
+- Phase 3 will not start with an empty native CLI scaffold. Its process boundary must be chosen first because retaining the TypeScript AI engine and porting the entire networked stack are materially different projects.
+
+### Evidence
+
+- Passed: `npm test --workspace @repo/ai` (7 tests across the analyzer and Rust adapter).
+- Passed: `npm run build --workspace @repo/ai`.
+- The adapter test covers schema conversion, incompatible output, and spawning a configured executable.
+
+### Resolution
+
+- Resolved by the Phase 3 hybrid boundary above: keep the TypeScript command and engine, and package only the Rust analyzer.
+
+## 2026-11-16 — Phase 1 benchmark decision
+
+### Decisions
+
+- The benchmark corpus was frozen before measurement: barber-saas (441 eligible files), Vite (2,172), and Next.js (29,892).
+- Correctness now compares both the normalized `ProjectContext` JSON and a benchmark-only discovered-file manifest. Comparing only final JSON was insufficient because most source-file paths are discarded by `ProjectContext`.
+- The harness uses three warmups, twenty measured runs, alternating implementation order, release-mode Rust, filesystem-warm caches, and `/usr/bin/time` for CPU/RSS. Future wall time uses Node's monotonic nanosecond clock because macOS `/usr/bin/time` rounds to 10 ms.
+- Phase 1 passed every provisional gate. Proceed to Phase 2 CLI integration without changing generated documentation output.
+
+### Evidence
+
+- Medium median wall time: TypeScript 0.74 s; Rust 0.06 s (91.9% reduction).
+- Large median wall time: TypeScript 34.44 s; Rust 1.23 s (96.4% reduction).
+- Large peak RSS: TypeScript 613.1 MiB; Rust 124.5 MiB (79.7% reduction).
+- Full results: `docs/benchmarks/2026-11-16-analyzer.md`.
+
+### Risks
+
+- The source changes were benchmarked from a working tree based on commit `c25e31de76d1b99f85a2f45c9c22c180e5525f22`; the result file records the exact corpus revisions but the analyzer changes should be committed before external reproduction.
+- The TypeScript runtime-size comparison counts only the Node executable and excludes dependencies, so it is a conservative lower bound rather than a full packaged-size measurement.
+- Phase 2 still needs a binary discovery and packaging strategy; benchmark success alone does not solve cross-platform distribution.
+
 ## 2026-11-16 — Rust analyzer parity
 
 ### Decisions
@@ -21,7 +88,7 @@
 
 - Passed: `cargo fmt --all -- --check` after formatting.
 - Passed: `cargo clippy -p dxgen-analyze --all-targets -- -D warnings`.
-- Passed: `cargo test -p dxgen-analyze` (3 tests).
+- Passed: `cargo test -p dxgen-analyze` (4 tests).
 - Passed: `cargo build --release -p dxgen-analyze`.
 - Passed: `npm run test:analyzer-parity`.
 

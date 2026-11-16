@@ -15,7 +15,7 @@ const goldenPath = path.resolve(
 );
 const fixtureJsonPath = fixturePath.replaceAll("\\", "/");
 
-const analyzerArgs = (repositoryPath: string): string[] => [
+const analyzerArgs = (repositoryPath: string, format = "json"): string[] => [
   "--conditions=source",
   "--import",
   "tsx",
@@ -24,7 +24,7 @@ const analyzerArgs = (repositoryPath: string): string[] => [
   "--max-depth",
   "3",
   "--format",
-  "json",
+  format,
 ];
 
 const runAnalyzer = async (): Promise<string> => {
@@ -47,6 +47,24 @@ describe("dxgen-analyze TypeScript baseline", () => {
 
   it("is deterministic across repeated runs", async () => {
     expect(await runAnalyzer()).toBe(await runAnalyzer());
+  });
+
+  it("lists every discovered file for parity diagnostics", async () => {
+    const { stdout } = await execFileAsync(
+      process.execPath,
+      analyzerArgs(fixturePath, "files"),
+      { encoding: "utf8" },
+    );
+
+    expect(JSON.parse(stdout)).toEqual([
+      "README.md",
+      "broken/package.json",
+      "config/app.yaml",
+      "docs/guide.md",
+      "package.json",
+      "src/index.ts",
+      "tsconfig.json",
+    ]);
   });
 
   it("fails when the repository cannot be analyzed", async () => {

@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-11-16T20:24:55.050Z",
+  "protocol": {
+    "warmups": 3,
+    "runs": 20,
+    "filesystemCache": "warm",
+    "order": "alternating"
+  },
+  "environment": {
+    "platform": "darwin arm64",
+    "os": "26.4.1",
+    "cpu": "Apple M1 Pro",
+    "logicalCores": 10,
+    "memoryBytes": 34359738368,
+    "node": "v24.21.0",
+    "npm": "11.19.0",
+    "rust": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "sourceRevision": "84486a916870ccfd04301986c90196aefb7f1608",
+    "rustBinaryBytes": 2041408,
+    "nodeExecutableBytes": 247417680
+  },
+  "results": [
+    {
+      "repository": "fixture",
+      "revision": "84486a916870ccfd04301986c90196aefb7f1608",
+      "chunkCount": 7,
+      "outputBytes": 2851,
+      "outputSha256": "ffbf9ab707b20533b5e50abd0cddd64437ef5fef7eff3a662143cd0fa797b57e",
+      "typescript": {
+        "medianWallSeconds": 0.28159825,
+        "p95WallSeconds": 0.28987125,
+        "medianCpuSeconds": 0.47,
+        "peakRssBytes": 132300800
+      },
+      "rust": {
+        "medianWallSeconds": 0.006068416,
+        "p95WallSeconds": 0.008233125,
+        "medianCpuSeconds": 0,
+        "peakRssBytes": 3473408
+      }
+    },
+    {
+      "repository": "dxgen",
+      "revision": "84486a916870ccfd04301986c90196aefb7f1608",
+      "chunkCount": 512,
+      "outputBytes": 750086,
+      "outputSha256": "dc6354281108e151d331bf5134318d950a5cd098ef94d8dd7b9430a16165b192",
+      "typescript": {
+        "medianWallSeconds": 0.325113083,
+        "p95WallSeconds": 0.3482215,
+        "medianCpuSeconds": 0.54,
+        "peakRssBytes": 154304512
+      },
+      "rust": {
+        "medianWallSeconds": 0.020427292,
+        "p95WallSeconds": 0.021696458,
+        "medianCpuSeconds": 0.01,
+        "peakRssBytes": 6701056
+      }
+    }
+  ]
+}

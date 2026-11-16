@@ -1,6 +1,6 @@
 # DXGen Rust Migration Spec
 
-Status: **proposed**  
+Status: **Phase 3 hybrid boundary accepted; cross-platform release automation pending**
 Strategy: **incremental migration, no big-bang rewrite**  
 First target: **deterministic project analysis only**
 
@@ -19,9 +19,15 @@ The first implementation must reproduce the existing TypeScript `ProjectContext`
 | Golden repository fixtures | Done | `npm test --workspace @repo/ai` (`packages/ai/test/fixtures/baseline`, `packages/ai/test/golden/baseline.json`) |
 | Rust workspace and analyzer | Done | `cargo test -p dxgen-analyze` (`crates/dxgen-analyze`) |
 | TypeScript/Rust parity test | Done | `npm run test:analyzer-parity` (`scripts/check-analyzer-parity.mjs`) |
-| Benchmark harness | Pending | — |
-| Benchmark results | Pending | — |
-| Migration decision | Pending | — |
+| Benchmark harness | Done | `npm run benchmark:analyzers -- --output <result.json> <alias=repository>...` (`scripts/benchmark-analyzers.mjs`) |
+| Benchmark results | Done | `docs/benchmarks/2026-11-16-analyzer.md` |
+| Migration decision | Done | Phase 1 gate passed; proceed to CLI integration |
+| TypeScript CLI integration | Done | `DXGEN_ANALYZER_PATH=target/release/dxgen-analyze` selects Rust through `packages/ai/src/context/rust-project-context.ts` |
+| Phase 3 boundary decision | Done | TypeScript retains CLI, AI, and RAG ownership; Rust remains the deterministic analyzer (`docs/RUST_MIGRATION_DECISIONS.md`) |
+| Packaged analyzer discovery | Done | `npm test --workspace @dxgen/cli` (`apps/cli/src/lib/analyzer.test.ts`) |
+| Current-platform npm package | Done | `npm run package:native --workspace @dxgen/cli` plus tarball content inspection |
+| Cross-platform release artifacts | Pending | No CI matrix or release result yet |
+| RAG/AI native migration | Not planned | Retained in TypeScript by the Phase 3 boundary decision |
 
 Update this table when a step is completed. A step is not complete without a command, test, or result file linked in the Evidence column.
 
@@ -181,11 +187,25 @@ These thresholds are provisional. Change them before running the benchmark, not 
 | 0 | Spec and baseline | Contract and benchmark protocol accepted |
 | 1 | Rust analyzer | Parity and benchmark gates pass |
 | 2 | CLI integration | TypeScript CLI can invoke Rust without changing user output |
-| 3 | Native Rust CLI | Login, prompts, progress, and file output reach feature parity |
+| 3 | Hybrid CLI packaging | The TypeScript CLI preserves login, prompts, progress, RAG/AI, and file output; its package auto-selects the colocated Rust analyzer |
 | 4 | RAG evaluation | Chunking and retrieval are benchmarked separately |
 | 5 | AI orchestration evaluation | Provider and agent migration has a separate design decision |
 
 The Next.js frontend and GitHub App remain TypeScript unless a later spec demonstrates a concrete reason to migrate them.
+
+The benchmark-only `--format files` diagnostic emits sorted discovered paths so the correctness gate can verify scanner parity. Product callers continue to use `--format json`.
+
+Phase 2 selects Rust by setting `DXGEN_ANALYZER_PATH` to the analyzer binary. The adapter validates `schemaVersion`, removes the boundary-only field, restores the detected stack, and returns the existing `ProjectContext`. When the variable is absent, the current TypeScript analyzer remains the default. An explicitly configured but failing Rust binary produces an actionable error instead of silently changing implementations.
+
+Phase 3 keeps the product command and networked engine in TypeScript. The CLI looks for a target-specific analyzer at `native/<platform>-<architecture>/dxgen-analyze[.exe]` beside its `dist` bundle. An explicit `DXGEN_ANALYZER_PATH` always wins; when neither is present, the TypeScript analyzer remains the fallback. The package staging command places the release analyzer in that layout without changing authentication, prompts, generated files, providers, or frontend code.
+
+```text
+TypeScript CLI (auth, prompts, progress, output)
+  ├─ TypeScript RAG + AI engine (providers and orchestration)
+  └─ TypeScript adapter ── JSON schema v1 ── Rust dxgen-analyze
+```
+
+The product CLI still requires Node. Only `dxgen-analyze` is standalone. A Rust wrapper around the TypeScript CLI is intentionally excluded because it would add a process boundary without taking ownership of product behavior.
 
 ## 11. Benchmark result template
 
@@ -218,4 +238,4 @@ Create a dated result under `docs/benchmarks/` when the harness exists:
 
 ## 12. Next action
 
-Create the benchmark harness and select the small, medium, and large repository corpus. Do not run or interpret performance results until the corpus is recorded.
+Add a release build matrix for the supported Node platforms, stage each matching Rust analyzer with `npm run package:native --workspace @dxgen/cli`, install-test each produced artifact, and record the results. Do not begin Phase 4 or port RAG/AI providers without a separate benchmark spec and decision gate.
