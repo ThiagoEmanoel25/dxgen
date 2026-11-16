@@ -1,6 +1,6 @@
 # DXGen Rust Migration Spec
 
-Status: **Phase 3 hybrid boundary accepted; cross-platform release automation pending**
+Status: **Phase 4 local RAG boundary accepted; Phase 5 evaluated and retained in TypeScript**
 Strategy: **incremental migration, no big-bang rewrite**  
 First target: **deterministic project analysis only**
 
@@ -27,7 +27,9 @@ The first implementation must reproduce the existing TypeScript `ProjectContext`
 | Packaged analyzer discovery | Done | `npm test --workspace @dxgen/cli` (`apps/cli/src/lib/analyzer.test.ts`) |
 | Current-platform npm package | Done | `npm run package:native --workspace @dxgen/cli` plus tarball content inspection |
 | Cross-platform release artifacts | Pending | No CI matrix or release result yet |
-| RAG/AI native migration | Not planned | Retained in TypeScript by the Phase 3 boundary decision |
+| Native RAG scan + chunk | Done | `npm run test:rag-parity`; `docs/benchmarks/2026-11-16-rag.md` |
+| RAG integration and fallback | Done | `npm test --workspace @repo/rag`; `npm test --workspace @dxgen/cli` |
+| AI orchestration/provider evaluation | Done, retained in TypeScript | `docs/RUST_MIGRATION_DECISIONS.md` |
 
 Update this table when a step is completed. A step is not complete without a command, test, or result file linked in the Evidence column.
 
@@ -188,8 +190,8 @@ These thresholds are provisional. Change them before running the benchmark, not 
 | 1 | Rust analyzer | Parity and benchmark gates pass |
 | 2 | CLI integration | TypeScript CLI can invoke Rust without changing user output |
 | 3 | Hybrid CLI packaging | The TypeScript CLI preserves login, prompts, progress, RAG/AI, and file output; its package auto-selects the colocated Rust analyzer |
-| 4 | RAG evaluation | Chunking and retrieval are benchmarked separately |
-| 5 | AI orchestration evaluation | Provider and agent migration has a separate design decision |
+| 4 | RAG evaluation | Complete: default local scan + chunking has a versioned Rust boundary; network retrieval remains TypeScript |
+| 5 | AI orchestration evaluation | Complete as an evaluation: provider and agent migration is rejected until a provider-neutral contract can be tested without changing behavior |
 
 The Next.js frontend and GitHub App remain TypeScript unless a later spec demonstrates a concrete reason to migrate them.
 
@@ -201,11 +203,26 @@ Phase 3 keeps the product command and networked engine in TypeScript. The CLI lo
 
 ```text
 TypeScript CLI (auth, prompts, progress, output)
-  ├─ TypeScript RAG + AI engine (providers and orchestration)
+  ├─ TypeScript RAG network layer + AI engine (providers and orchestration)
+  ├─ TypeScript adapter ── JSON schema v1 ── Rust dxgen-rag (default scan + chunk)
   └─ TypeScript adapter ── JSON schema v1 ── Rust dxgen-analyze
 ```
 
 The product CLI still requires Node. Only `dxgen-analyze` is standalone. A Rust wrapper around the TypeScript CLI is intentionally excluded because it would add a process boundary without taking ownership of product behavior.
+
+### Phase 4 RAG contract
+
+`dxgen-rag <repository-path> [--chunk-size 1500] [--chunk-overlap 200]` owns only credential-free repository scanning, recursive character chunking, and chunk metadata. It emits schema v1 as `{"schemaVersion":1,"chunks":[]}`.
+
+The contract preserves chunk IDs, text, source paths, relative paths, indices, counts, line ranges, and semantic flags. Chunk arrays are compared by `(relativePath, chunkIndex)` because the old Globby traversal order is filesystem-dependent and has no indexing meaning. `DXGEN_RAG_PATH` opts into the native boundary; packaged CLIs discover the colocated binary. Absence of a binary, custom scan options, or the explicitly reported UTF-16 hard-split edge case uses the existing TypeScript implementation. A configured binary that otherwise fails or returns an incompatible schema is an error.
+
+OpenAI embeddings, Pinecone writes/queries, LangChain `Document` conversion, filters, and hybrid retrieval remain TypeScript. They require provider credentials and SDK behavior and were not included in the local benchmark.
+
+The Phase 4 gate is the Phase 1 local-work gate applied separately: exact normalized chunk parity, at least 30% median wall-time reduction or 50% peak-RSS reduction on a non-trivial repository, and no more than a 10% small-fixture regression. The recorded benchmark passes.
+
+### Phase 5 AI boundary
+
+No Rust AI subprocess was added. The current agent and generators depend directly on LangChain message/tool types, OpenAI tool-call semantics, environment-loaded credentials, tracing metadata, and provider error behavior. Moving prompt formatting alone would add JSON serialization and process startup without owning a meaningful unit of work; moving providers would require a new SDK, credential, retry, streaming, tool-call, and observability contract. Without deterministic provider fixtures or approved live credentials, claiming parity would be unsafe.
 
 ## 11. Benchmark result template
 
@@ -238,4 +255,4 @@ Create a dated result under `docs/benchmarks/` when the harness exists:
 
 ## 12. Next action
 
-Add a release build matrix for the supported Node platforms, stage each matching Rust analyzer with `npm run package:native --workspace @dxgen/cli`, install-test each produced artifact, and record the results. Do not begin Phase 4 or port RAG/AI providers without a separate benchmark spec and decision gate.
+Add a release build matrix for the supported Node platforms, stage both matching Rust binaries with `npm run package:native --workspace @dxgen/cli`, install-test each produced artifact, and record the results. Revisit AI/provider migration only after provider-neutral recorded fixtures cover tool calls, retries, errors, tracing, and generated-output parity.
