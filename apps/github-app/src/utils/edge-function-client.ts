@@ -5,15 +5,18 @@
  * RAG pipeline and document generation, keeping API keys secure on the server.
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const GITHUB_APP_SERVICE_TOKEN = process.env.GITHUB_APP_SERVICE_TOKEN;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const EDGE_TIMEOUT_MS = 30_000;
 
-if (!SUPABASE_URL || !GITHUB_APP_SERVICE_TOKEN) {
-  throw new Error(
-    "Missing required environment variables: SUPABASE_URL and GITHUB_APP_SERVICE_TOKEN must be set",
-  );
-}
+const getEdgeConfig = () => {
+  const url = process.env.SUPABASE_URL;
+  const serviceToken = process.env.GITHUB_APP_SERVICE_TOKEN;
+  if (!url || !serviceToken) {
+    throw new Error(
+      "Missing required environment variables: SUPABASE_URL and GITHUB_APP_SERVICE_TOKEN must be set",
+    );
+  }
+  return { url, serviceToken, anonKey: process.env.SUPABASE_ANON_KEY ?? "" };
+};
 
 export interface RAGPipelineRequest {
   chunks: Array<{
@@ -92,7 +95,8 @@ export interface GenerateSummaryResponse {
 export async function callRAGPipeline(
   request: RAGPipelineRequest,
 ): Promise<RAGPipelineResponse> {
-  const functionUrl = `${SUPABASE_URL}/functions/v1/github-app-process`;
+  const config = getEdgeConfig();
+  const functionUrl = `${config.url}/functions/v1/github-app-process`;
 
   console.log(`[EdgeFunction] Calling RAG pipeline: ${functionUrl}`);
   console.log(`[EdgeFunction] Repository: ${request.prContext.repoFullName}`);
@@ -102,11 +106,12 @@ export async function callRAGPipeline(
   const response = await fetch(functionUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${GITHUB_APP_SERVICE_TOKEN}`,
+      Authorization: `Bearer ${config.serviceToken}`,
       "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY || "",
+      apikey: config.anonKey,
     },
     body: JSON.stringify(request),
+    signal: AbortSignal.timeout(EDGE_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -154,7 +159,8 @@ export async function callRAGPipeline(
 export async function callGenerateSummary(
   request: GenerateSummaryRequest,
 ): Promise<GenerateSummaryResponse> {
-  const functionUrl = `${SUPABASE_URL}/functions/v1/github-app-generate`;
+  const config = getEdgeConfig();
+  const functionUrl = `${config.url}/functions/v1/github-app-generate`;
 
   console.log(`[EdgeFunction] Calling generate summary: ${functionUrl}`);
   console.log(`[EdgeFunction] Root path: ${request.rootPath}`);
@@ -163,11 +169,12 @@ export async function callGenerateSummary(
   const response = await fetch(functionUrl, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${GITHUB_APP_SERVICE_TOKEN}`,
+      Authorization: `Bearer ${config.serviceToken}`,
       "Content-Type": "application/json",
-      apikey: SUPABASE_ANON_KEY || "",
+      apikey: config.anonKey,
     },
     body: JSON.stringify(request),
+    signal: AbortSignal.timeout(EDGE_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -212,5 +219,5 @@ export async function callGenerateSummary(
  * Returns true if SUPABASE_URL and GITHUB_APP_SERVICE_TOKEN are set
  */
 export function shouldUseEdgeFunctions(): boolean {
-  return !!(SUPABASE_URL && GITHUB_APP_SERVICE_TOKEN);
+  return !!(process.env.SUPABASE_URL && process.env.GITHUB_APP_SERVICE_TOKEN);
 }

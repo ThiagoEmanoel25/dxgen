@@ -1,12 +1,12 @@
-import { prepareProjectChunks, runRagPipeline } from "@repo/rag";
 import type { Document } from "@langchain/core/documents";
-import type { PRContext } from "./pr-context";
-import { buildPRFocusedQuery } from "./pr-context";
+import { prepareProjectChunks, runRagPipeline } from "@repo/rag";
 import {
   callRAGPipeline,
-  shouldUseEdgeFunctions,
   type RAGPipelineRequest,
+  shouldUseEdgeFunctions,
 } from "./edge-function-client";
+import type { PRContext } from "./pr-context";
+import { buildPRFocusedQuery } from "./pr-context";
 
 export interface RAGOptions {
   rootDir: string;
@@ -109,10 +109,6 @@ export async function getRagDocumentsForPR(
       },
     });
   }
-
-  console.log(
-    `[RAG] Retrieved ${result.documents.length} documents for project ${prContext.repoFullName}`,
-  );
 
   console.log(
     `[RAG] Retrieved ${result.documents.length} documents for project ${prContext.repoFullName}`,

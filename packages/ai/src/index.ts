@@ -1,8 +1,11 @@
 import type { Document } from "@langchain/core/documents";
 
-import { executeDocumentationAgent } from "./agent";
 import { buildProjectContext } from "./context/project-context";
 import { buildRustProjectContext } from "./context/rust-project-context";
+import { generateApiDocs } from "./generators/api-docs.generator";
+import { generateDiagrams } from "./generators/diagram.generator";
+import { generateReadme } from "./generators/readme.generator";
+import { generateSummary } from "./generators/summary.generator";
 import { detectStack } from "./tools/stack-detector.tool";
 import type {
   DetectedStack,
@@ -18,17 +21,6 @@ export interface GenerateOptions {
   analyzerPath?: string;
 }
 
-/**
- * AI Agent Documentation Generation
- *
- * Uses an intelligent agent that:
- * 1. Analyzes the codebase with detection tools
- * 2. Validates requests with guardrails
- * 3. Generates appropriate documentation
- * 4. Suggests alternatives when needed
- *
- * Pipeline: User Request → Agent Analysis → Tool Use → Documentation
- */
 export async function runGenerateCommand(
   request: GenerateRequest,
   options: GenerateOptions,
@@ -62,19 +54,25 @@ export async function runGenerateCommand(
         });
   }
 
-  // Step 3: Execute the AI agent
-  // The agent will:
-  // - Use detection tools to understand the codebase
-  // - Apply guardrails to validate the request
-  // - Generate documentation or suggest alternatives
-  const result = await executeDocumentationAgent(
-    request,
+  const params = {
+    rootPath: request.project.rootPath,
+    outputDir: request.wizard.outputDir,
+    style: request.wizard.style,
     documents,
     stack,
     projectContext,
-  );
+  };
 
-  return result;
+  switch (request.wizard.feature) {
+    case "readme":
+      return generateReadme(params);
+    case "api-docs":
+      return generateApiDocs(params);
+    case "diagram":
+      return generateDiagrams(params);
+    case "summary":
+      return generateSummary(params);
+  }
 }
 
 // Export types and utilities
