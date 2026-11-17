@@ -16,7 +16,10 @@ export function createStackDetectorTool(documents: Document[]) {
   return tool(
     async () => {
       if (documents.length === 0) {
-        return JSON.stringify({ language: "other", notes: "No documents to analyze" });
+        return JSON.stringify({
+          language: "other",
+          notes: "No documents to analyze",
+        });
       }
 
       const context = formatContext(documents, {
@@ -39,7 +42,7 @@ export function createStackDetectorTool(documents: Document[]) {
         new HumanMessage(`Analyze this codebase:\n\n${context}`),
       ];
 
-      const response = await invokeLLM({ prompt, maxContextTokens: 5_000 });
+      const response = await invokeLLM({ prompt });
       const content = extractContent(response);
 
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -48,11 +51,15 @@ export function createStackDetectorTool(documents: Document[]) {
         return JSON.stringify(parsed);
       }
 
-      return JSON.stringify({ language: "other", notes: "Could not parse detection" });
+      return JSON.stringify({
+        language: "other",
+        notes: "Could not parse detection",
+      });
     },
     {
       name: "detect_stack",
-      description: "Detects the technology stack (language, framework, architecture) from the codebase. Use this first to understand what kind of project you're analyzing.",
+      description:
+        "Detects the technology stack (language, framework, architecture) from the codebase. Use this first to understand what kind of project you're analyzing.",
       schema: z.object({}),
     },
   );
@@ -61,7 +68,7 @@ export function createStackDetectorTool(documents: Document[]) {
 /**
  * Tool: Detect API endpoints in codebase
  * Returns whether project has API routes and what type
- * 
+ *
  * IMPROVED: More accurate detection with better pattern matching
  */
 export function createApiDetectorTool(documents: Document[]) {
@@ -92,7 +99,8 @@ export function createApiDetectorTool(documents: Document[]) {
       for (const doc of documents) {
         const metadata = (doc.metadata ?? {}) as Record<string, unknown>;
         const path =
-          (typeof metadata.relativePath === "string" && metadata.relativePath) ||
+          (typeof metadata.relativePath === "string" &&
+            metadata.relativePath) ||
           (typeof metadata.path === "string" && metadata.path) ||
           "";
         const lower = path.toLowerCase();
@@ -146,9 +154,10 @@ export function createApiDetectorTool(documents: Document[]) {
       const hasApi = apiFilesFound.length >= 1 && totalEndpointCount >= 2;
 
       if (!hasApi) {
-        const reason = apiFilesFound.length === 0
-          ? "No API files detected in the project"
-          : `Found ${apiFilesFound.length} API-related files but only ${totalEndpointCount} endpoint(s) - need at least 2 endpoints`;
+        const reason =
+          apiFilesFound.length === 0
+            ? "No API files detected in the project"
+            : `Found ${apiFilesFound.length} API-related files but only ${totalEndpointCount} endpoint(s) - need at least 2 endpoints`;
 
         return JSON.stringify({
           hasApi: false,
@@ -163,7 +172,8 @@ export function createApiDetectorTool(documents: Document[]) {
       const apiDocs = documents.filter((doc) => {
         const metadata = (doc.metadata ?? {}) as Record<string, unknown>;
         const path =
-          (typeof metadata.relativePath === "string" && metadata.relativePath) ||
+          (typeof metadata.relativePath === "string" &&
+            metadata.relativePath) ||
           "";
         return apiFilesFound.some((f) => f.path === path);
       });
@@ -176,13 +186,15 @@ export function createApiDetectorTool(documents: Document[]) {
       const prompt = [
         new SystemMessage(
           "Analyze these API files and determine the API type. Respond ONLY with JSON: " +
-          '{"hasApi": true, "apiType": "REST|GraphQL|gRPC|WebSocket", "endpointCount": number, "notes": "..."}'
+            '{"hasApi": true, "apiType": "REST|GraphQL|gRPC|WebSocket", "endpointCount": number, "notes": "..."}',
         ),
-        new HumanMessage(`Found ${totalEndpointCount} endpoints in ${apiFilesFound.length} files:\n\n${context}`),
+        new HumanMessage(
+          `Found ${totalEndpointCount} endpoints in ${apiFilesFound.length} files:\n\n${context}`,
+        ),
       ];
 
       try {
-        const response = await invokeLLM({ prompt, maxContextTokens: 5_000 });
+        const response = await invokeLLM({ prompt });
         const content = extractContent(response);
 
         const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -216,7 +228,8 @@ export function createApiDetectorTool(documents: Document[]) {
     },
     {
       name: "detect_api_endpoints",
-      description: "Checks if the project has API endpoints (REST, GraphQL, WebSocket, etc.). Use this before generating API documentation to validate the request makes sense. This tool uses comprehensive pattern matching to detect actual endpoint definitions.",
+      description:
+        "Checks if the project has API endpoints (REST, GraphQL, WebSocket, etc.). Use this before generating API documentation to validate the request makes sense. This tool uses comprehensive pattern matching to detect actual endpoint definitions.",
       schema: z.object({}),
     },
   );
@@ -233,20 +246,25 @@ export function createStructureAnalyzerTool(documents: Document[]) {
       documents.forEach((doc) => {
         const metadata = (doc.metadata ?? {}) as Record<string, unknown>;
         const path =
-          (typeof metadata.relativePath === "string" && metadata.relativePath) ||
+          (typeof metadata.relativePath === "string" &&
+            metadata.relativePath) ||
           "";
         if (path) paths.add(path);
       });
 
       const uniquePaths = Array.from(paths);
       const hasMonorepo = uniquePaths.some(
-        (p) => p.includes("packages/") || p.includes("apps/")
+        (p) => p.includes("packages/") || p.includes("apps/"),
       );
-      const hasMultipleServices = uniquePaths.filter(
-        (p) => p.includes("service") || p.includes("microservice")
-      ).length > 1;
+      const hasMultipleServices =
+        uniquePaths.filter(
+          (p) => p.includes("service") || p.includes("microservice"),
+        ).length > 1;
       const hasDatabaseSchemas = uniquePaths.some(
-        (p) => p.includes("schema") || p.includes("migration") || p.includes("prisma")
+        (p) =>
+          p.includes("schema") ||
+          p.includes("migration") ||
+          p.includes("prisma"),
       );
 
       let complexity: "simple" | "moderate" | "complex" = "simple";
@@ -269,9 +287,9 @@ export function createStructureAnalyzerTool(documents: Document[]) {
     },
     {
       name: "analyze_project_structure",
-      description: "Analyzes project structure to understand complexity (simple/moderate/complex), whether it's a monorepo, and architecture patterns. Useful for deciding which documentation types are most valuable.",
+      description:
+        "Analyzes project structure to understand complexity (simple/moderate/complex), whether it's a monorepo, and architecture patterns. Useful for deciding which documentation types are most valuable.",
       schema: z.object({}),
     },
   );
 }
-

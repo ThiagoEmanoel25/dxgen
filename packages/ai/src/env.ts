@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const optionalNumber = (schema: z.ZodNumber) =>
+  z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    z.coerce.number().pipe(schema).optional(),
+  );
+
 /**
  * Environment variable schema for AI package configuration.
  * All values have fallbacks to ensure the system works without explicit configuration.
@@ -9,24 +15,12 @@ const aiEnvSchema = z.object({
   AI_OPENAI_MODEL: z.string().optional(),
 
   // LLM generation parameters
-  AI_TEMPERATURE: z
-    .string()
-    .optional()
-    .transform((val) => (val ? parseFloat(val) : undefined)),
-  AI_MAX_RETRIES: z
-    .string()
-    .optional()
-    .transform((val) => (val ? parseInt(val, 10) : undefined)),
+  AI_TEMPERATURE: optionalNumber(z.number().min(0).max(2)),
+  AI_MAX_RETRIES: optionalNumber(z.number().int().min(0)),
 
   // Context formatting defaults
-  AI_MAX_ENTRIES_DEFAULT: z
-    .string()
-    .optional()
-    .transform((val) => (val ? parseInt(val, 10) : undefined)),
-  AI_MAX_CHARS_PER_ENTRY_DEFAULT: z
-    .string()
-    .optional()
-    .transform((val) => (val ? parseInt(val, 10) : undefined)),
+  AI_MAX_ENTRIES_DEFAULT: optionalNumber(z.number().int().positive()),
+  AI_MAX_CHARS_PER_ENTRY_DEFAULT: optionalNumber(z.number().int().positive()),
 });
 
 /**
@@ -54,4 +48,3 @@ export function getAiEnvConfig(): AiEnvConfig {
     maxCharsPerEntryDefault: raw.AI_MAX_CHARS_PER_ENTRY_DEFAULT ?? 2_000,
   };
 }
-

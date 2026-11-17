@@ -29,7 +29,7 @@ The first implementation must reproduce the existing TypeScript `ProjectContext`
 | Cross-platform release artifacts | Pending | No CI matrix or release result yet |
 | Native RAG scan + chunk | Done | `npm run test:rag-parity`; `docs/benchmarks/2026-11-16-rag.md` |
 | RAG integration and fallback | Done | `npm test --workspace @repo/rag`; `npm test --workspace @dxgen/cli` |
-| AI orchestration/provider evaluation | Done, retained in TypeScript | `docs/RUST_MIGRATION_DECISIONS.md` |
+| AI generation/provider evaluation | Done, retained in TypeScript | `docs/RUST_MIGRATION_DECISIONS.md` |
 
 Update this table when a step is completed. A step is not complete without a command, test, or result file linked in the Evidence column.
 
@@ -208,7 +208,7 @@ TypeScript CLI (auth, prompts, progress, output)
   └─ TypeScript adapter ── JSON schema v1 ── Rust dxgen-analyze
 ```
 
-The product CLI still requires Node. Only `dxgen-analyze` is standalone. A Rust wrapper around the TypeScript CLI is intentionally excluded because it would add a process boundary without taking ownership of product behavior.
+The product CLI still requires Node. Only `dxgen-analyze` and `dxgen-rag` are standalone. A Rust wrapper around the TypeScript CLI is intentionally excluded because it would add a process boundary without taking ownership of product behavior.
 
 ### Phase 4 RAG contract
 
@@ -222,7 +222,9 @@ The Phase 4 gate is the Phase 1 local-work gate applied separately: exact normal
 
 ### Phase 5 AI boundary
 
-No Rust AI subprocess was added. The current agent and generators depend directly on LangChain message/tool types, OpenAI tool-call semantics, environment-loaded credentials, tracing metadata, and provider error behavior. Moving prompt formatting alone would add JSON serialization and process startup without owning a meaningful unit of work; moving providers would require a new SDK, credential, retry, streaming, tool-call, and observability contract. Without deterministic provider fixtures or approved live credentials, claiming parity would be unsafe.
+No Rust AI subprocess was added. The selected documentation generator is called directly; an extra LLM agent call is not used to repeat the wizard's routing decision. Generators still depend directly on LangChain message types, OpenAI behavior, environment-loaded credentials, tracing metadata, and provider errors. Moving prompt formatting alone would add JSON serialization and process startup without owning a meaningful unit of work; moving providers would require a new SDK, credential, retry, streaming, and observability contract. Without deterministic provider fixtures or approved live credentials, claiming parity would be unsafe.
+
+The native RAG boundary currently performs recursive **character** chunking, not model-token (BPE) tokenization. A tokenization migration needs its own parity fixture against the exact encoding used by the embedding and chat models before performance is compared.
 
 ## 11. Benchmark result template
 
