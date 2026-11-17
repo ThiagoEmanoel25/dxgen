@@ -4,6 +4,11 @@ RAG toolkit used by the DXGen CLI to scan a repository, chunk the relevant files
 store embeddings in Pinecone (per user + project), and retrieve context for
 LangChain / LangGraph chains.
 
+Default scan + chunk can run through the packaged Rust helper by setting
+`DXGEN_RAG_PATH=/path/to/dxgen-rag`. Without it, or when custom scan options are
+used, the existing TypeScript implementation remains active. Embeddings,
+Pinecone, and retrieval always remain in TypeScript.
+
 ## Features
 
 - File system scanner with configurable extensions & ignore globs.

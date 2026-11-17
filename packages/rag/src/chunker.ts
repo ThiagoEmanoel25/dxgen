@@ -1,5 +1,5 @@
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import path from "node:path";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 import { getRagEnvConfig } from "./env.js";
 import type { ChunkOptions, FileChunk, ProjectFile } from "./types.js";
@@ -92,7 +92,7 @@ export async function chunkProjectFiles(
       const start = file.content.indexOf(text, searchCursor);
       const end = start === -1 ? -1 : start + text.length;
       if (start !== -1) {
-        searchCursor = end;
+        searchCursor = start + 1;
       }
 
       const startLine = start === -1 ? 1 : countLinesUntil(file.content, start);
