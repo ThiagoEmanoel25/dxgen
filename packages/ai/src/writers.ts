@@ -33,24 +33,20 @@ export function resolveFilePath(
 ): string {
   const { outputDir } = request.wizard;
   const { suggestedPath } = result;
-
-  // Se o suggestedPath já é absoluto, use-o diretamente
   if (path.isAbsolute(suggestedPath)) {
-    return suggestedPath;
+    throw new Error(
+      "Generated file path must be relative to the output directory",
+    );
   }
-
-  // Se o suggestedPath começa com "./" ou é relativo, combine com outputDir
   const normalizedOutputDir = path.isAbsolute(outputDir)
     ? outputDir
     : path.resolve(request.project.rootPath, outputDir);
-
-  // Se o suggestedPath já inclui o outputDir, use-o diretamente
-  // Caso contrário, combine-os
-  if (suggestedPath.startsWith(outputDir) || suggestedPath.startsWith("./")) {
-    return path.resolve(request.project.rootPath, suggestedPath);
+  const filePath = path.resolve(normalizedOutputDir, suggestedPath);
+  const relative = path.relative(normalizedOutputDir, filePath);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw new Error("Generated file path escapes the output directory");
   }
-
-  return path.resolve(normalizedOutputDir, suggestedPath);
+  return filePath;
 }
 
 /**
@@ -81,8 +77,9 @@ export async function writeDocumentationFile(
   result: GenerateResult,
   options: WriteFileOptions = {},
 ): Promise<WriteResult> {
+  let filePath = "";
   try {
-    const filePath = resolveFilePath(request, result);
+    filePath = resolveFilePath(request, result);
 
     // Verifica se o arquivo já existe
     const exists = await fileExists(filePath);
@@ -132,7 +129,7 @@ export async function writeDocumentationFile(
   } catch (error) {
     return {
       success: false,
-      filePath: resolveFilePath(request, result),
+      filePath,
       error: (error as Error).message,
     };
   }

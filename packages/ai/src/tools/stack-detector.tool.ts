@@ -46,10 +46,7 @@ async function detectStack(documents: Document[]): Promise<DetectedStack> {
   ];
 
   try {
-    const response = await invokeLLM({
-      prompt,
-      maxContextTokens: 5_000,
-    });
+    const response = await invokeLLM({ prompt });
 
     const content = extractContent(response);
 

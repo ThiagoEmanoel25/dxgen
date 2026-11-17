@@ -79,7 +79,10 @@ export async function renderSystemDesignArtifacts(
   const diagram = extractPrimaryMermaidDiagram(architectureMarkdown);
   const documentationDirectory = path.dirname(architecturePath);
   const assetsDirectory = path.join(documentationDirectory, "assets");
-  const imagePath = path.join(assetsDirectory, "system-design.svg");
+  const imagePath = path.join(
+    assetsDirectory,
+    "system-design.svg",
+  ) as `${string}.svg`;
   const readmePath = path.join(documentationDirectory, "README.md");
   const temporaryDirectory = await fs.mkdtemp(
     path.join(os.tmpdir(), "dxgen-system-design-"),

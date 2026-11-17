@@ -1,10 +1,8 @@
 import type { Document } from "@langchain/core/documents";
 import { HumanMessage } from "@langchain/core/messages";
-import { ChatOpenAI } from "@langchain/openai";
-import "dotenv/config";
 import { createAgent } from "langchain";
 
-import { getAiEnvConfig } from "../env.js";
+import { getChatModel } from "../llm/client";
 import type {
   DetectedStack,
   GenerateRequest,
@@ -22,19 +20,6 @@ import {
   createReadmeGeneratorTool,
   createSummaryGeneratorTool,
 } from "./tools/generation.tools";
-
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  throw new Error("OPENAI_API_KEY is required");
-}
-
-const envConfig = getAiEnvConfig();
-const model = new ChatOpenAI({
-  model: envConfig.openaiModel,
-  apiKey,
-  temperature: envConfig.temperature,
-  maxRetries: envConfig.maxRetries,
-});
 
 /**
  * Documentation Agent
@@ -65,7 +50,7 @@ export async function createDocumentationAgent(
   ];
 
   const agent = createAgent({
-    model,
+    model: getChatModel(),
     tools,
   });
 
@@ -98,73 +83,70 @@ export async function executeDocumentationAgent(
   // Build the agent's task
   const agentPrompt = buildAgentPrompt(request);
 
-  try {
-    // Invoke the agent
-    const response = await agent.invoke(
-      {
-        messages: [new HumanMessage(agentPrompt)],
+  // Invoke the agent
+  const response = await agent.invoke(
+    {
+      messages: [new HumanMessage(agentPrompt)],
+    },
+    {
+      runName: "dxgen-agent",
+      tags: ["dxgen", wizard.feature],
+      metadata: {
+        projectRoot: request.project.rootPath,
+        outputDir: wizard.outputDir,
+        feature: wizard.feature,
+        style: wizard.style,
       },
-      {
-        runName: "dxgen-agent",
-        tags: ["dxgen", wizard.feature],
-        metadata: {
-          projectRoot: request.project.rootPath,
-          outputDir: wizard.outputDir,
-          feature: wizard.feature,
-          style: wizard.style,
-        },
-      },
-    );
+    },
+  );
 
-    // Extract the result - check for tool calls first
-    const messages = response.messages;
+  // Extract the result - check for tool calls first
+  const messages = response.messages;
 
-    // Look for the last tool message (which contains our JSON result)
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const msg = messages[i];
+  // Look for the last tool message (which contains our JSON result)
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
 
-      // Check if this is a tool message
-      if (msg._getType && msg._getType() === "tool") {
-        try {
-          const toolContent = msg.content?.toString() || "";
-          const result = JSON.parse(toolContent) as GenerateResult;
-          return result;
-        } catch (parseError) {
-          // Continue looking at other messages
-          continue;
-        }
-      }
-
-      // Also check AI messages that might contain JSON
-      if (msg._getType && msg._getType() === "ai") {
-        const content = msg.content?.toString() || "";
-
-        // Try to extract JSON from the content
-        const jsonMatch = content.match(
-          /\{[\s\S]*"kind"\s*:\s*"[^"]+"\s*,[\s\S]*"content"\s*:[\s\S]*\}/,
-        );
-        if (jsonMatch) {
-          try {
-            const result = JSON.parse(jsonMatch[0]) as GenerateResult;
-            return result;
-          } catch (parseError) {}
-        }
+    // Check if this is a tool message
+    if (msg._getType && msg._getType() === "tool") {
+      try {
+        const toolContent = msg.content?.toString() || "";
+        const result = JSON.parse(toolContent) as GenerateResult;
+        if (isGenerateResult(result)) return result;
+      } catch {
+        continue;
       }
     }
 
-    // If we couldn't find a valid result, throw an error
-    throw new Error("Could not extract valid result from agent response");
-  } catch (error) {
-    console.error("\n❌ Agent encountered an error:", (error as Error).message);
+    // Also check AI messages that might contain JSON
+    if (msg._getType && msg._getType() === "ai") {
+      const content = msg.content?.toString() || "";
 
-    // Fallback result
-    return {
-      kind: wizard.feature as GenerateResult["kind"],
-      suggestedPath: "ERROR.md",
-      content: `# Documentation Generation Failed\n\n${(error as Error).message}\n\nPlease try again or request a different documentation type.`,
-    };
+      // Try to extract JSON from the content
+      const jsonMatch = content.match(
+        /\{[\s\S]*"kind"\s*:\s*"[^"]+"\s*,[\s\S]*"content"\s*:[\s\S]*\}/,
+      );
+      if (jsonMatch) {
+        try {
+          const result = JSON.parse(jsonMatch[0]) as GenerateResult;
+          if (isGenerateResult(result)) return result;
+        } catch {}
+      }
+    }
   }
+
+  throw new Error("Could not extract valid result from agent response");
 }
+
+const isGenerateResult = (value: unknown): value is GenerateResult =>
+  typeof value === "object" &&
+  value !== null &&
+  "kind" in value &&
+  ["readme", "api-docs", "diagram", "summary"].includes(String(value.kind)) &&
+  "content" in value &&
+  typeof value.content === "string" &&
+  "suggestedPath" in value &&
+  typeof value.suggestedPath === "string";
 
 /**
  * Build the agent's task prompt
