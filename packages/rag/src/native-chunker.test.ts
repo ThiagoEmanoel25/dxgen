@@ -14,10 +14,12 @@ const temporaryDirectories: string[] = [];
 
 afterEach(async () => {
   delete process.env.DXGEN_RAG_PATH;
+  delete process.env.RAG_CHUNK_SIZE;
+  delete process.env.RAG_CHUNK_OVERLAP;
   await Promise.all(
-    temporaryDirectories.splice(0).map((directory) =>
-      rm(directory, { recursive: true, force: true }),
-    ),
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
   );
 });
 
@@ -32,7 +34,9 @@ describe("Rust RAG boundary", () => {
   it.runIf(process.platform !== "win32")(
     "invokes a configured executable with chunk options",
     async () => {
-      const directory = await mkdtemp(path.join(os.tmpdir(), "dxgen-rag-test-"));
+      const directory = await mkdtemp(
+        path.join(os.tmpdir(), "dxgen-rag-test-"),
+      );
       temporaryDirectories.push(directory);
       const executable = path.join(directory, "fake-rag");
       await writeFile(
@@ -55,7 +59,10 @@ printf '%s' '{"schemaVersion":1,"chunks":[]}'
   it("preserves the TypeScript fallback when no native binary is configured", async () => {
     const directory = await mkdtemp(path.join(os.tmpdir(), "dxgen-rag-test-"));
     temporaryDirectories.push(directory);
-    await writeFile(path.join(directory, "index.ts"), "export const value = 1;\n");
+    await writeFile(
+      path.join(directory, "index.ts"),
+      "export const value = 1;\n",
+    );
 
     const chunks = await prepareProjectChunks(directory, undefined, {
       chunkSize: 100,
@@ -64,4 +71,57 @@ printf '%s' '{"schemaVersion":1,"chunks":[]}'
     expect(chunks).toHaveLength(1);
     expect(chunks[0].metadata.relativePath).toBe("index.ts");
   });
+
+  it.runIf(process.platform !== "win32")(
+    "passes environment chunk settings to the native binary",
+    async () => {
+      const directory = await mkdtemp(
+        path.join(os.tmpdir(), "dxgen-rag-test-"),
+      );
+      temporaryDirectories.push(directory);
+      const executable = path.join(directory, "fake-rag");
+      await writeFile(
+        executable,
+        `#!/bin/sh
+if [ "$2" != "--chunk-size" ] || [ "$3" != "321" ] || [ "$4" != "--chunk-overlap" ] || [ "$5" != "21" ]; then
+  exit 9
+fi
+printf '%s' '{"schemaVersion":1,"chunks":[]}'
+`,
+      );
+      await chmod(executable, 0o755);
+      process.env.DXGEN_RAG_PATH = executable;
+      process.env.RAG_CHUNK_SIZE = "321";
+      process.env.RAG_CHUNK_OVERLAP = "21";
+
+      await expect(prepareProjectChunks(directory)).resolves.toEqual([]);
+    },
+  );
+
+  it.runIf(process.platform !== "win32")(
+    "falls back for the declared UTF-16 hard-split limitation",
+    async () => {
+      const directory = await mkdtemp(
+        path.join(os.tmpdir(), "dxgen-rag-test-"),
+      );
+      temporaryDirectories.push(directory);
+      await writeFile(
+        path.join(directory, "index.ts"),
+        "export const globe = '🌎';\n",
+      );
+      const executable = path.join(directory, "unsupported-rag");
+      await writeFile(
+        executable,
+        `#!/bin/sh
+printf '%s\n' 'DXGEN_RAG_UNSUPPORTED_UTF16_SPLIT: use the TypeScript fallback' >&2
+exit 1
+`,
+      );
+      await chmod(executable, 0o755);
+      process.env.DXGEN_RAG_PATH = executable;
+
+      const chunks = await prepareProjectChunks(directory);
+      expect(chunks[0].metadata.relativePath).toBe("index.ts");
+    },
+  );
 });

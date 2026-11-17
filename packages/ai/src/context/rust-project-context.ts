@@ -58,7 +58,7 @@ export async function buildRustProjectContext(
         "--format",
         "json",
       ],
-      { encoding: "utf8", maxBuffer: 200 * 1024 * 1024 },
+      { encoding: "utf8", maxBuffer: 200 * 1024 * 1024, timeout: 60_000 },
     );
     return parseRustAnalyzerOutput(stdout, options.stack);
   } catch (error) {

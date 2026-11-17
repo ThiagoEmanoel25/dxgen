@@ -202,7 +202,8 @@ function buildProjectMetadataContext(
 ): string {
   const primaryPackage =
     projectContext?.packages.find(
-      (pkg) => pkg.path === "." || pkg.path === "apps/cli" || pkg.path === "apps/web",
+      (pkg) =>
+        pkg.path === "." || pkg.path === "apps/cli" || pkg.path === "apps/web",
     ) ?? projectContext?.packages[0];
 
   const projectName =
@@ -229,10 +230,14 @@ function buildProjectMetadataContext(
     stackInfo,
     `- **Primary Description**: ${description}`,
     "",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
-function buildPackageScriptsContext(projectContext: ProjectContext | undefined): string {
+function buildPackageScriptsContext(
+  projectContext: ProjectContext | undefined,
+): string {
   if (!projectContext?.packages.length) {
     return "## AVAILABLE SCRIPTS\n\n_No scripts detected. Infer common workflows from context._\n";
   }
@@ -263,7 +268,7 @@ function buildPackageScriptsContext(projectContext: ProjectContext | undefined):
 /**
  * Convert ProjectContext.structure tree to human-readable format.
  * This provides the LLM with the EXACT directory structure.
- * 
+ *
  * Strategy:
  * - Show full depth for important directories (apps/, packages/, src/)
  * - Limit files shown at root level (only important config files)
@@ -284,115 +289,227 @@ function serializeStructureTree(
   // Important directories that should always be fully expanded
   const IMPORTANT_DIRS = [
     // Monorepo & workspace
-    "apps", "packages", "libs", "modules",
+    "apps",
+    "packages",
+    "libs",
+    "modules",
     // Source code
-    "src", "lib", "core", "shared", "common",
+    "src",
+    "lib",
+    "core",
+    "shared",
+    "common",
     // Frontend
-    "components", "pages", "views", "screens", "layouts", "hooks", "contexts", "store", "styles", "assets", "public", "static",
+    "components",
+    "pages",
+    "views",
+    "screens",
+    "layouts",
+    "hooks",
+    "contexts",
+    "store",
+    "styles",
+    "assets",
+    "public",
+    "static",
     // Backend
-    "api", "routes", "controllers", "models", "services", "middleware", "handlers", "resolvers", "schemas",
+    "api",
+    "routes",
+    "controllers",
+    "models",
+    "services",
+    "middleware",
+    "handlers",
+    "resolvers",
+    "schemas",
     // Database & data
-    "database", "db", "migrations", "seeds", "queries",
+    "database",
+    "db",
+    "migrations",
+    "seeds",
+    "queries",
     // Testing
-    "tests", "test", "__tests__", "spec", "e2e", "cypress", "playwright",
+    "tests",
+    "test",
+    "__tests__",
+    "spec",
+    "e2e",
+    "cypress",
+    "playwright",
     // Configuration & tooling
-    "config", "configs", "scripts", "tools", "build", "dist", "out",
+    "config",
+    "configs",
+    "scripts",
+    "tools",
+    "build",
+    "dist",
+    "out",
     // Documentation
-    "docs", "documentation",
+    "docs",
+    "documentation",
     // Go-specific
-    "cmd", "pkg", "internal",
+    "cmd",
+    "pkg",
+    "internal",
     // Python-specific
-    "app", "main", "utils",
+    "app",
+    "main",
+    "utils",
     // Types
-    "types", "typings", "@types",
+    "types",
+    "typings",
+    "@types",
   ];
-  
+
   // Important files to show (config files at various levels)
   const IMPORTANT_FILES = [
     // Package managers (JS/TS)
-    "package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "bun.lockb",
+    "package.json",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml",
+    "bun.lockb",
     // TypeScript
-    "tsconfig.json", "tsconfig.base.json", "tsconfig.build.json",
+    "tsconfig.json",
+    "tsconfig.base.json",
+    "tsconfig.build.json",
     // Build tools & bundlers
-    "turbo.json", "nx.json", "next.config.js", "next.config.ts", "next.config.mjs",
-    "vite.config.js", "vite.config.ts", "webpack.config.js", "rollup.config.js",
-    "esbuild.config.js", "tsup.config.ts",
+    "turbo.json",
+    "nx.json",
+    "next.config.js",
+    "next.config.ts",
+    "next.config.mjs",
+    "vite.config.js",
+    "vite.config.ts",
+    "webpack.config.js",
+    "rollup.config.js",
+    "esbuild.config.js",
+    "tsup.config.ts",
     // Styling
-    "tailwind.config.js", "tailwind.config.ts", "postcss.config.js", "postcss.config.mjs",
+    "tailwind.config.js",
+    "tailwind.config.ts",
+    "postcss.config.js",
+    "postcss.config.mjs",
     // Linting & formatting
-    ".eslintrc", ".eslintrc.js", ".eslintrc.json", ".prettierrc", ".prettierrc.json",
-    "biome.json", ".editorconfig",
+    ".eslintrc",
+    ".eslintrc.js",
+    ".eslintrc.json",
+    ".prettierrc",
+    ".prettierrc.json",
+    "biome.json",
+    ".editorconfig",
     // Testing
-    "jest.config.js", "jest.config.ts", "vitest.config.ts", "cypress.config.js", "playwright.config.ts",
+    "jest.config.js",
+    "jest.config.ts",
+    "vitest.config.ts",
+    "cypress.config.js",
+    "playwright.config.ts",
     // Python
-    "requirements.txt", "setup.py", "pyproject.toml", "Pipfile", "Pipfile.lock", "poetry.lock",
-    "pytest.ini", "tox.ini", "setup.cfg",
+    "requirements.txt",
+    "setup.py",
+    "pyproject.toml",
+    "Pipfile",
+    "Pipfile.lock",
+    "poetry.lock",
+    "pytest.ini",
+    "tox.ini",
+    "setup.cfg",
     // Go
-    "go.mod", "go.sum", "Makefile",
+    "go.mod",
+    "go.sum",
+    "Makefile",
     // Rust
-    "Cargo.toml", "Cargo.lock", "rust-toolchain", "rust-toolchain.toml",
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain",
+    "rust-toolchain.toml",
     // Ruby
-    "Gemfile", "Gemfile.lock", "Rakefile",
+    "Gemfile",
+    "Gemfile.lock",
+    "Rakefile",
     // PHP
-    "composer.json", "composer.lock",
+    "composer.json",
+    "composer.lock",
     // Java/Kotlin
-    "pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle",
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
+    "settings.gradle",
     // Docker & containerization
-    "Dockerfile", "docker-compose.yml", "docker-compose.yaml", ".dockerignore",
+    "Dockerfile",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    ".dockerignore",
     // Environment & secrets
-    ".env", ".env.example", ".env.local", ".env.development", ".env.production",
+    ".env",
+    ".env.example",
+    ".env.local",
+    ".env.development",
+    ".env.production",
     // Git & version control
-    ".gitignore", ".gitattributes",
+    ".gitignore",
+    ".gitattributes",
     // CI/CD
-    ".gitlab-ci.yml", ".travis.yml", "Jenkinsfile", "azure-pipelines.yml",
+    ".gitlab-ci.yml",
+    ".travis.yml",
+    "Jenkinsfile",
+    "azure-pipelines.yml",
     // Documentation
-    "README.md", "CHANGELOG.md", "CONTRIBUTING.md", "LICENSE", "LICENSE.md",
+    "README.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "LICENSE.md",
     // Miscellaneous
-    "Procfile", "vercel.json", "netlify.toml", ".nvmrc", ".node-version",
+    "Procfile",
+    "vercel.json",
+    "netlify.toml",
+    ".nvmrc",
+    ".node-version",
   ];
-  
+
   // Helper to get description for a directory/file
   const getDescription = (node: ProjectStructureNode): string => {
     // Try to find package.json description for this path
     if (projectContext?.packages) {
-      const pkg = projectContext.packages.find(p => 
-        node.path === p.path || node.path.startsWith(p.path + "/")
+      const pkg = projectContext.packages.find(
+        (p) => node.path === p.path || node.path.startsWith(p.path + "/"),
       );
       if (pkg?.description) {
         return `# ${pkg.description}`;
       }
     }
-    
+
     // Common directory descriptions
     const dirDescriptions: Record<string, string> = {
-      "apps": "# Application packages",
-      "packages": "# Shared packages/libraries",
-      "libs": "# Shared libraries",
-      "src": "# Source code",
-      "lib": "# Library code",
-      "components": "# React/UI components",
-      "pages": "# Page components",
-      "api": "# API routes/endpoints",
-      "routes": "# Application routes",
-      "services": "# Business logic services",
-      "utils": "# Utility functions",
-      "hooks": "# Custom React hooks",
-      "contexts": "# React contexts",
-      "store": "# State management",
-      "types": "# TypeScript type definitions",
-      "middleware": "# Middleware functions",
-      "models": "# Data models",
-      "schemas": "# Data schemas",
-      "controllers": "# API controllers",
-      "config": "# Configuration files",
-      "docs": "# Documentation",
-      "tests": "# Test files",
-      "e2e": "# End-to-end tests",
-      "public": "# Public static assets",
-      "assets": "# Static assets",
-      "styles": "# Stylesheets",
+      apps: "# Application packages",
+      packages: "# Shared packages/libraries",
+      libs: "# Shared libraries",
+      src: "# Source code",
+      lib: "# Library code",
+      components: "# React/UI components",
+      pages: "# Page components",
+      api: "# API routes/endpoints",
+      routes: "# Application routes",
+      services: "# Business logic services",
+      utils: "# Utility functions",
+      hooks: "# Custom React hooks",
+      contexts: "# React contexts",
+      store: "# State management",
+      types: "# TypeScript type definitions",
+      middleware: "# Middleware functions",
+      models: "# Data models",
+      schemas: "# Data schemas",
+      controllers: "# API controllers",
+      config: "# Configuration files",
+      docs: "# Documentation",
+      tests: "# Test files",
+      e2e: "# End-to-end tests",
+      public: "# Public static assets",
+      assets: "# Static assets",
+      styles: "# Stylesheets",
     };
-    
+
     // File descriptions
     const fileDescriptions: Record<string, string> = {
       "package.json": "# Package configuration",
@@ -404,30 +521,32 @@ function serializeStructureTree(
       "biome.json": "# Biome config",
       ".env.example": "# Environment variables template",
     };
-    
+
     if (node.type === "dir") {
       return dirDescriptions[node.name] || "";
     } else {
       return fileDescriptions[node.name] || "";
     }
   };
-  
+
   // Separate directories and files
-  const dirs = nodes.filter(n => n.type === "dir").sort((a, b) => {
-    // Prioritize important directories
-    const aImportant = IMPORTANT_DIRS.includes(a.name);
-    const bImportant = IMPORTANT_DIRS.includes(b.name);
-    if (aImportant && !bImportant) return -1;
-    if (!aImportant && bImportant) return 1;
-    return a.name.localeCompare(b.name);
-  });
-  
-  const files = nodes.filter(n => n.type === "file");
-  
+  const dirs = nodes
+    .filter((n) => n.type === "dir")
+    .sort((a, b) => {
+      // Prioritize important directories
+      const aImportant = IMPORTANT_DIRS.includes(a.name);
+      const bImportant = IMPORTANT_DIRS.includes(b.name);
+      if (aImportant && !bImportant) return -1;
+      if (!aImportant && bImportant) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+  const files = nodes.filter((n) => n.type === "file");
+
   // At root level, only show important config files
   const isRootLevel = currentDepth === 0;
-  const filesToShow = isRootLevel 
-    ? files.filter(f => IMPORTANT_FILES.includes(f.name))
+  const filesToShow = isRootLevel
+    ? files.filter((f) => IMPORTANT_FILES.includes(f.name))
     : files.slice(0, 15); // Show up to 15 files in subdirectories
 
   // Process directories first (always show them)
@@ -442,7 +561,11 @@ function serializeStructureTree(
     lines.push(`${prefix}${node.name}/${descriptionSuffix}`);
 
     // Recursively add children (always expand if we haven't hit max depth)
-    if (node.children && node.children.length > 0 && currentDepth < maxDisplayDepth - 1) {
+    if (
+      node.children &&
+      node.children.length > 0 &&
+      currentDepth < maxDisplayDepth - 1
+    ) {
       const childTree = serializeStructureTree(
         node.children,
         projectContext,
@@ -463,7 +586,7 @@ function serializeStructureTree(
     const node = filesToShow[i]!;
     const isLastNode = i === filesToShow.length - 1;
     const prefix = indent + (isLastNode ? "└── " : "├── ");
-    
+
     const description = getDescription(node);
     const descriptionSuffix = description ? `     ${description}` : "";
     lines.push(`${prefix}${node.name}${descriptionSuffix}`);
@@ -472,8 +595,9 @@ function serializeStructureTree(
   // Add note if we skipped files
   if (files.length > filesToShow.length) {
     const skippedCount = files.length - filesToShow.length;
-    const notePrefix = filesToShow.length === 0 && dirs.length > 0 ? "└── " : "├── ";
-    
+    const notePrefix =
+      filesToShow.length === 0 && dirs.length > 0 ? "└── " : "├── ";
+
     // Adjust the last item's prefix if needed
     if (filesToShow.length > 0) {
       const lastIndex = lines.length - 1;
@@ -481,8 +605,8 @@ function serializeStructureTree(
         lines[lastIndex] = lines[lastIndex]!.replace("└── ", "├── ");
       }
     }
-    
-    const noteText = isRootLevel 
+
+    const noteText = isRootLevel
       ? `... (${skippedCount} other config/doc files)`
       : `... (${skippedCount} more files)`;
     lines.push(`${indent}└── ${noteText}`);
@@ -503,8 +627,9 @@ function buildProjectStructureContext(
   }
 
   // Get the project name from the root path
-  const projectName = projectContext.rootPath.split("/").filter(Boolean).pop() || "project";
-  
+  const projectName =
+    projectContext.rootPath.split("/").filter(Boolean).pop() || "project";
+
   // Serialize the tree with descriptions
   const tree = serializeStructureTree(projectContext.structure, projectContext);
 
@@ -665,11 +790,18 @@ export async function generateReadme(params: {
   stack?: DetectedStack;
   projectContext?: ProjectContext;
 }): Promise<GenerateResult> {
-  const { rootPath, outputDir, style, documents, stack, projectContext } = params;
+  const { rootPath, outputDir, style, documents, stack, projectContext } =
+    params;
 
   // Build comprehensive context for LLM
   const contextSections = [
-    buildProjectMetadataContext(projectContext, rootPath, outputDir, style, stack),
+    buildProjectMetadataContext(
+      projectContext,
+      rootPath,
+      outputDir,
+      style,
+      stack,
+    ),
     buildProjectStructureContext(projectContext), // ← PRIMARY source of structure truth!
     buildFileListContext(documents),
     buildPackageScriptsContext(projectContext),
@@ -686,31 +818,17 @@ export async function generateReadme(params: {
     ),
   ];
 
-  try {
-    const response = await invokeLLM({
-      prompt,
-      maxContextTokens: 50_000,
-    });
+  const response = await invokeLLM({ prompt });
 
-    const content = extractContent(response);
+  const content = extractContent(response);
 
-    if (content.trim().length === 0) {
-      throw new Error("Empty LLM response");
-    }
-
-    return {
-      kind: "readme",
-      suggestedPath: "README.md",
-      content,
-    };
-  } catch (error) {
-    const errorMsg = (error as Error).message;
-
-    return {
-      kind: "readme",
-      suggestedPath: "README.md",
-      content: `# README Generation Failed\n\nFailed to generate README: ${errorMsg}\n\nStyle: ${style}\nOutput dir: ${outputDir}\n`,
-    };
+  if (content.trim().length === 0) {
+    throw new Error("Empty LLM response");
   }
-}
 
+  return {
+    kind: "readme",
+    suggestedPath: "README.md",
+    content,
+  };
+}

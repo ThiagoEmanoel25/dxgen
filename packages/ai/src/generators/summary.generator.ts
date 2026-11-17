@@ -179,30 +179,17 @@ export async function generateSummary(params: {
     ),
   ];
 
-  try {
-    const response = await invokeLLM({
-      prompt,
-      maxContextTokens: 45_000,
-    });
+  const response = await invokeLLM({ prompt });
 
-    const content = extractContent(response);
+  const content = extractContent(response);
 
-    if (content.trim().length === 0) {
-      throw new Error("Empty LLM response");
-    }
-
-    return {
-      kind: "summary",
-      suggestedPath: "SUMMARY.md",
-      content,
-    };
-  } catch (error) {
-    const errorMsg = (error as Error).message;
-
-    return {
-      kind: "summary",
-      suggestedPath: "SUMMARY.md",
-      content: `# Repository Summary Generation Failed\n\nFailed to generate summary: ${errorMsg}\n`,
-    };
+  if (content.trim().length === 0) {
+    throw new Error("Empty LLM response");
   }
+
+  return {
+    kind: "summary",
+    suggestedPath: "SUMMARY.md",
+    content,
+  };
 }

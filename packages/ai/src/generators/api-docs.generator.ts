@@ -148,7 +148,7 @@ function detectApiEndpoints(documents: Document[]): {
 /**
  * Generate API documentation.
  * Focused on endpoints, schemas, and integration details.
- * 
+ *
  * STRONG GUARDRAILS:
  * - Only generates docs if real API endpoints are detected
  * - Fails fast if no APIs exist
@@ -168,7 +168,9 @@ export async function generateApiDocs(params: {
   const detection = detectApiEndpoints(documents);
 
   if (!detection.hasApi) {
-    throw new Error("No API endpoints detected in the project. Cannot generate API documentation without actual endpoints.");
+    throw new Error(
+      "No API endpoints detected in the project. Cannot generate API documentation without actual endpoints.",
+    );
   }
 
   // GUARDRAIL 2: Ensure we have actual API code to analyze
@@ -181,7 +183,9 @@ export async function generateApiDocs(params: {
     `## PROJECT CONTEXT`,
     `- **Root Path**: ${rootPath}`,
     `- **Style**: ${style || "Technical API documentation"}`,
-    stack ? `- **Stack**: ${stack.language}${stack.framework ? ` + ${stack.framework}` : ""}` : "",
+    stack
+      ? `- **Stack**: ${stack.language}${stack.framework ? ` + ${stack.framework}` : ""}`
+      : "",
   ];
 
   if (projectContext) {
@@ -217,48 +221,24 @@ export async function generateApiDocs(params: {
     ),
   ];
 
-  try {
-    const response = await invokeLLM({
-      prompt,
-      maxContextTokens: 50_000,
-    });
+  const response = await invokeLLM({ prompt });
 
-    const content = extractContent(response);
+  const content = extractContent(response);
 
-    // GUARDRAIL 3: Check if LLM returned the "no API" signal
-    if (content.trim() === "NO_API_FOUND" || content.includes("example.com")) {
-      throw new Error("Unable to extract real API endpoint information from the codebase. The AI could not confidently identify actual API routes.");
-    }
-
-    if (content.trim().length === 0) {
-      throw new Error("Empty LLM response");
-    }
-
-    return {
-      kind: "api-docs",
-      suggestedPath: "API.md",
-      content,
-    };
-  } catch (error) {
-    const errorMsg = (error as Error).message;
-    console.error("  ❌ Error:", errorMsg);
-
-    return {
-      kind: "api-docs",
-      suggestedPath: "API.md",
-      content: `# API Documentation Generation Failed
-
-An error occurred while generating API documentation:
-
-\`\`\`
-${errorMsg}
-\`\`\`
-
-**Detection Result:** ${detection.reason}
-
-Please try again or report this issue if it persists.
-`,
-    };
+  // GUARDRAIL 3: Check if LLM returned the "no API" signal
+  if (content.trim() === "NO_API_FOUND" || content.includes("example.com")) {
+    throw new Error(
+      "Unable to extract real API endpoint information from the codebase. The AI could not confidently identify actual API routes.",
+    );
   }
-}
 
+  if (content.trim().length === 0) {
+    throw new Error("Empty LLM response");
+  }
+
+  return {
+    kind: "api-docs",
+    suggestedPath: "API.md",
+    content,
+  };
+}

@@ -1,24 +1,29 @@
 import type { Document } from "@langchain/core/documents";
-import { HumanMessage } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 import "dotenv/config";
 import { getAiEnvConfig } from "../env.js";
 import type { FormatContextOptions, InvokeOptions } from "../types";
 
-const apiKey = process.env.OPENAI_API_KEY;
-if (!apiKey) {
-  throw new Error(
-    "OPENAI_API_KEY is required. Define it in .env before generating docs.",
-  );
-}
+let model: ChatOpenAI | undefined;
 
-const envConfig = getAiEnvConfig();
-const model = new ChatOpenAI({
-  model: envConfig.openaiModel,
-  apiKey,
-  temperature: envConfig.temperature,
-  maxRetries: envConfig.maxRetries,
-});
+export function getChatModel(): ChatOpenAI {
+  if (model) return model;
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "OPENAI_API_KEY is required. Define it in .env before generating docs.",
+    );
+  }
+  const envConfig = getAiEnvConfig();
+  model = new ChatOpenAI({
+    model: envConfig.openaiModel,
+    apiKey,
+    temperature: envConfig.temperature,
+    maxRetries: envConfig.maxRetries,
+    timeout: 60_000,
+  });
+  return model;
+}
 
 export function formatContext(
   documents: Document[],
@@ -57,21 +62,8 @@ export function formatContext(
     .join("\n\n");
 }
 
-export async function invokeLLM({
-  prompt,
-  context,
-  maxContextTokens,
-  tags,
-  metadata,
-}: InvokeOptions) {
-  const finalContext =
-    context && maxContextTokens ? context.slice(0, maxContextTokens) : context;
-
-  const finalMessages = finalContext
-    ? [...prompt, new HumanMessage(`Context:\n${finalContext}`)]
-    : prompt;
-
-  const response = await model.invoke(finalMessages, {
+export async function invokeLLM({ prompt, tags, metadata }: InvokeOptions) {
+  const response = await getChatModel().invoke(prompt, {
     tags,
     metadata,
   });

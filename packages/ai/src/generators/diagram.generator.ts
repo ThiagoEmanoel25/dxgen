@@ -569,16 +569,9 @@ export async function generateDiagrams(params: {
   const { rootPath, style, documents, stack, projectContext } = params;
 
   if (documents.length === 0) {
-    return {
-      kind: "diagram",
-      suggestedPath: "ARCHITECTURE.md",
-      content: `# Architecture Diagram Not Available
-
-No source files were provided to analyze. Cannot generate architecture diagrams without code to analyze.
-
-Please ensure the project has been properly scanned.
-`,
-    };
+    throw new Error(
+      "No source files were provided to generate architecture diagrams",
+    );
   }
 
   const contextPrompt = buildDiagramContext(
@@ -597,43 +590,20 @@ Please ensure the project has been properly scanned.
     ),
   ];
 
-  try {
-    const response = await invokeLLM({
-      prompt,
-      maxContextTokens: 60_000,
-    });
+  const response = await invokeLLM({ prompt });
 
-    const content = extractContent(response);
+  const content = extractContent(response);
 
-    if (content.trim().length === 0) {
-      throw new Error("Empty LLM response");
-    }
-
-    // Fix any invalid Mermaid syntax before returning
-    const fixedContent = fixMermaidSyntax(content);
-
-    return {
-      kind: "diagram",
-      suggestedPath: "ARCHITECTURE.md",
-      content: fixedContent,
-    };
-  } catch (error) {
-    const errorMsg = (error as Error).message;
-    console.error("  ❌ Error:", errorMsg);
-
-    return {
-      kind: "diagram",
-      suggestedPath: "ARCHITECTURE.md",
-      content: `# Architecture Diagram Generation Failed
-
-An error occurred while generating architecture diagrams:
-
-\`\`\`
-${errorMsg}
-\`\`\`
-
-Please try again or report this issue if it persists.
-`,
-    };
+  if (content.trim().length === 0) {
+    throw new Error("Empty LLM response");
   }
+
+  // Fix any invalid Mermaid syntax before returning
+  const fixedContent = fixMermaidSyntax(content);
+
+  return {
+    kind: "diagram",
+    suggestedPath: "ARCHITECTURE.md",
+    content: fixedContent,
+  };
 }
