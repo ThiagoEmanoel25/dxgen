@@ -1,5 +1,5 @@
 import { prepareProjectChunks } from "./native-chunker.js";
-import { buildIndex, resetPineconeNamespace } from "./pinecone-sync.js";
+import { buildIndex, replaceIndex } from "./pinecone-sync.js";
 import { createRetriever } from "./retriever.js";
 import type {
   RagPipelineOptions,
@@ -32,11 +32,9 @@ export const runRagPipeline = async (
       chunkOptions: options.chunkOptions,
     };
 
-    if (options.sync.fullReindex) {
-      await resetPineconeNamespace(syncOptions);
-    }
-
-    syncSummary = await buildIndex(chunks, syncOptions);
+    syncSummary = options.sync.fullReindex
+      ? await replaceIndex(chunks, syncOptions)
+      : await buildIndex(chunks, syncOptions);
   }
 
   const retriever = createRetriever({

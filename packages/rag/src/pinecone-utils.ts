@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { Pinecone } from "@pinecone-database/pinecone";
 
 import type { PineconeConfig, SyncContext } from "./types.js";
@@ -9,10 +11,16 @@ export const buildNamespace = (
   context: SyncContext,
 ) => {
   if (pinecone.namespace) return pinecone.namespace;
-  const slug = `${context.userId}-${context.projectId}`
+  const readableUser = context.userId
     .replace(/[^a-z0-9-_]/gi, "-")
-    .toLowerCase();
-  return `${DEFAULT_NAMESPACE_PREFIX}-${slug}`;
+    .toLowerCase()
+    .slice(0, 24);
+  const identityHash = crypto
+    .createHash("sha256")
+    .update(`${context.userId}\0${context.projectId}`)
+    .digest("hex")
+    .slice(0, 32);
+  return `${DEFAULT_NAMESPACE_PREFIX}-${readableUser}-${identityHash}`;
 };
 
 export const ensurePineconeClient = (pinecone: PineconeConfig) => {
@@ -23,8 +31,7 @@ export const ensurePineconeClient = (pinecone: PineconeConfig) => {
 
   return new Pinecone({
     apiKey,
-    controllerHostUrl:
-      pinecone.controllerHostUrl,
+    controllerHostUrl: pinecone.controllerHostUrl,
   });
 };
 

@@ -136,78 +136,114 @@ const batchRecords = (
   return batches;
 };
 
-export async function buildIndex(
-  chunks: FileChunk[],
-  options: SyncOptions,
-): Promise<SyncSummary> {
+const prepareRecords = async (chunks: FileChunk[], options: SyncOptions) => {
   const embeddings = createEmbeddings(options.embeddings);
   const values = await embedChunks(chunks, embeddings);
-
   const { index, namespace } = getIndexForContext(
     options.pinecone,
     options.context,
   );
-
-  const records: PineconeRecord[] = values.map((vector, idx) => ({
-    id: chunkVectorId(chunks[idx], options),
+  const records: PineconeRecord[] = values.map((vector, index) => ({
+    id: chunkVectorId(chunks[index], options),
     values: vector,
-    metadata: buildMetadata(chunks[idx], options),
+    metadata: buildMetadata(chunks[index], options),
   }));
+  return { index, namespace, records };
+};
 
-  if (records.length === 0) {
-    return { index: options.pinecone.index, namespace, upsertedCount: 0 };
-  }
-
+const upsertRecords = async (
+  index: Awaited<ReturnType<typeof prepareRecords>>["index"],
+  records: PineconeRecord[],
+) => {
   const batches = batchRecords(records);
   let totalUpserted = 0;
 
-  for (let i = 0; i < batches.length; i++) {
-    const batch = batches[i];
+  for (let indexPosition = 0; indexPosition < batches.length; indexPosition++) {
+    const batch = batches[indexPosition];
     try {
       await index.upsert(batch);
       totalUpserted += batch.length;
     } catch (error) {
       const err = error as Error;
-      console.error(
-        `❌ Fail to upsert batch ${i + 1}/${batches.length}:`,
-        err.message,
-      );
       if (
-        err.message.includes("message length too large") ||
-        err.message.includes("too large")
+        !err.message.includes("message length too large") &&
+        !err.message.includes("too large")
       ) {
-        console.log(
-          `🔄 Trying to split batch ${i + 1} into smaller batches...`,
-        );
-        const halfSize = Math.ceil(batch.length / 2);
-        const subBatches = [
-          batch.slice(0, halfSize),
-          batch.slice(halfSize),
-        ].filter((b) => b.length > 0);
-
-        for (const subBatch of subBatches) {
-          try {
-            await index.upsert(subBatch);
-            totalUpserted += subBatch.length;
-          } catch (subError) {
-            console.error(
-              `❌ Fail to upsert sub-batch:`,
-              (subError as Error).message,
-            );
-            throw subError;
-          }
-        }
-      } else {
         throw error;
+      }
+      const halfSize = Math.ceil(batch.length / 2);
+      for (const subBatch of [
+        batch.slice(0, halfSize),
+        batch.slice(halfSize),
+      ].filter((value) => value.length > 0)) {
+        await index.upsert(subBatch);
+        totalUpserted += subBatch.length;
       }
     }
   }
+  return totalUpserted;
+};
+
+export const findStaleVectorIds = (
+  existingIds: string[],
+  currentIds: Set<string>,
+) => existingIds.filter((id) => !currentIds.has(id));
+
+const deleteStaleRecords = async (
+  index: Awaited<ReturnType<typeof prepareRecords>>["index"],
+  currentIds: Set<string>,
+) => {
+  const existingIds: string[] = [];
+  let paginationToken: string | undefined;
+  do {
+    const page = await index.listPaginated(
+      paginationToken ? { paginationToken } : undefined,
+    );
+    existingIds.push(
+      ...(page.vectors ?? [])
+        .map((vector) => vector.id)
+        .filter((id): id is string => typeof id === "string"),
+    );
+    paginationToken = page.pagination?.next;
+  } while (paginationToken);
+
+  const staleIds = findStaleVectorIds(existingIds, currentIds);
+  for (let offset = 0; offset < staleIds.length; offset += 1_000) {
+    await index.deleteMany(staleIds.slice(offset, offset + 1_000));
+  }
+};
+
+export async function buildIndex(
+  chunks: FileChunk[],
+  options: SyncOptions,
+): Promise<SyncSummary> {
+  const { index, namespace, records } = await prepareRecords(chunks, options);
+
+  if (records.length === 0) {
+    return { index: options.pinecone.index, namespace, upsertedCount: 0 };
+  }
+
+  const totalUpserted = await upsertRecords(index, records);
 
   return {
     index: options.pinecone.index,
     namespace,
     upsertedCount: totalUpserted,
   };
+}
+
+export async function replaceIndex(
+  chunks: FileChunk[],
+  options: SyncOptions,
+): Promise<SyncSummary> {
+  const { index, namespace, records } = await prepareRecords(chunks, options);
+  if (records.length === 0) {
+    await resetPineconeNamespace(options);
+    return { index: options.pinecone.index, namespace, upsertedCount: 0 };
+  }
+  const upsertedCount = await upsertRecords(index, records);
+  await deleteStaleRecords(index, new Set(records.map((record) => record.id)));
+  return { index: options.pinecone.index, namespace, upsertedCount };
 }
 
 export async function syncChunksToPinecone(

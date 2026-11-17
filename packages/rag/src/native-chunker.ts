@@ -2,6 +2,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import { chunkProjectFiles } from "./chunker.js";
+import { getRagEnvConfig } from "./env.js";
 import { scanProjectFiles } from "./file-scanner.js";
 import type { ChunkOptions, FileChunk, ScanOptions } from "./types.js";
 
@@ -20,7 +21,15 @@ const isFileChunk = (value: unknown): value is FileChunk =>
   typeof value.metadata.chunkIndex === "number" &&
   typeof value.metadata.chunkCount === "number" &&
   typeof value.metadata.startLine === "number" &&
-  typeof value.metadata.endLine === "number";
+  typeof value.metadata.endLine === "number" &&
+  ["code", "config", "docs", "test", "other"].includes(
+    String(value.metadata.fileType),
+  ) &&
+  typeof value.metadata.isConfig === "boolean" &&
+  typeof value.metadata.isPackageJson === "boolean" &&
+  typeof value.metadata.isReadme === "boolean" &&
+  typeof value.metadata.isEnvExample === "boolean" &&
+  typeof value.metadata.isCiConfig === "boolean";
 
 export function parseRustRagOutput(stdout: string): FileChunk[] {
   let value: unknown;
@@ -57,10 +66,14 @@ export async function chunkProjectWithRust(
     const { stdout } = await execFileAsync(binaryPath, args, {
       encoding: "utf8",
       maxBuffer: 500 * 1024 * 1024,
+      timeout: 60_000,
     });
     return parseRustRagOutput(stdout);
   } catch (error) {
-    if (error instanceof Error && error.message.startsWith("Rust RAG chunker")) {
+    if (
+      error instanceof Error &&
+      error.message.startsWith("Rust RAG chunker")
+    ) {
       throw error;
     }
     const stderr =
@@ -82,10 +95,19 @@ export async function prepareProjectChunks(
   const hasCustomScanOptions =
     scanOptions !== undefined &&
     Object.values(scanOptions).some((value) => value !== undefined);
+  const envConfig = getRagEnvConfig();
+  const resolvedChunkOptions = {
+    chunkSize: chunkOptions.chunkSize ?? envConfig.chunkSize,
+    chunkOverlap: chunkOptions.chunkOverlap ?? envConfig.chunkOverlap,
+  };
 
   if (nativePath && !hasCustomScanOptions) {
     try {
-      return await chunkProjectWithRust(rootDir, nativePath, chunkOptions);
+      return await chunkProjectWithRust(
+        rootDir,
+        nativePath,
+        resolvedChunkOptions,
+      );
     } catch (error) {
       if (
         !(error instanceof Error) ||
@@ -97,5 +119,5 @@ export async function prepareProjectChunks(
   }
 
   const { files } = await scanProjectFiles({ rootDir, ...scanOptions });
-  return chunkProjectFiles(files, chunkOptions);
+  return chunkProjectFiles(files, resolvedChunkOptions);
 }

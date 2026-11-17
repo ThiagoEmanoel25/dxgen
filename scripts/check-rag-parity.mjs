@@ -63,7 +63,9 @@ try {
   await Promise.all([
     writeFile(
       path.join(edgeFixture, "src/index.ts"),
-      "const greeting = 'olá 🌎';\n\nexport function greet() {\n  return greeting;\n}\n".repeat(3),
+      "const greeting = 'olá 🌎';\n\nexport function greet() {\n  return greeting;\n}\n".repeat(
+        3,
+      ),
     ),
     writeFile(
       path.join(edgeFixture, "README.md"),
