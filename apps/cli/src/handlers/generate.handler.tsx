@@ -165,11 +165,10 @@ export async function handleGenerate(): Promise<void> {
       details: stackParts.length > 0 ? stackParts.join(" + ") : undefined,
     });
 
-    // Complete indexing with file count (using upsertedCount as proxy)
-    const fileCount = syncSummary?.upsertedCount || 0;
+    const chunkCount = syncSummary?.upsertedCount ?? documents.length;
     updateStage?.("indexing", {
       status: "completed",
-      details: `${fileCount} files`,
+      details: `${chunkCount} chunks`,
     });
 
     // Stage 3: Understanding architecture (no details)
@@ -186,7 +185,10 @@ export async function handleGenerate(): Promise<void> {
       status: "in_progress",
     });
 
-    const result = await runGenerateCommand(request, { documents });
+    const result = await runGenerateCommand(request, {
+      documents,
+      stack: stackInfo,
+    });
 
     if (!result) {
       setError?.("No documentation was generated");

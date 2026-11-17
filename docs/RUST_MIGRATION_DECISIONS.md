@@ -1,5 +1,31 @@
 # DXGen Rust Migration Decisions
 
+## 2026-11-16 — Phase 4 local RAG accepted; Phase 5 providers retained
+
+### Decision
+
+- Rust now owns the credential-free default RAG scan + chunk stage through `dxgen-rag` JSON schema v1. It preserves chunk content and metadata; `DXGEN_RAG_PATH` selects it and the packaged CLI discovers it beside `dxgen-analyze`.
+- `@repo/rag` keeps the TypeScript implementation as the fallback. Absence of the native binary and custom scan options use TypeScript. An incompatible or failing configured binary is surfaced; only the declared UTF-16 hard-split limitation falls back because JavaScript can represent lone UTF-16 surrogates and Rust strings cannot.
+- The main RAG pipeline and the GitHub App edge path share `prepareProjectChunks`, so the migration reaches both local ingestion callers once. Embeddings, Pinecone synchronization/querying, filters, hybrid retrieval, and `Document` conversion remain TypeScript.
+- Phase 5 is complete as a design evaluation, not a provider port. OpenAI calls, prompts, retries, tracing, and result extraction remain TypeScript. Generation now routes directly from the wizard feature to its generator, avoiding an extra LLM agent call whose only job was to choose the already-selected feature. A Rust prompt-only subprocess was rejected as overhead without ownership; provider migration was rejected because no credential-free deterministic parity contract currently exists.
+- The accepted native RAG step is recursive character chunking, not model-token (BPE) tokenization. Tokenization remains a separate candidate that requires exact encoding parity before benchmarking.
+
+### Evidence
+
+- Passed: `npm run test:rag-parity` on the golden analyzer fixture and a Unicode/overlap fixture.
+- Passed: `cargo test -p dxgen-rag` (3 tests).
+- Passed: `npm test --workspace @repo/rag` (3 tests).
+- Passed: `npm run build --workspace @repo/rag`.
+- Phase 4 benchmark: `docs/benchmarks/2026-11-16-rag.md`. On the stable `packages/` corpus, median wall time fell from 303.14 ms to 11.67 ms (96.1%) and peak RSS from 127.7 MiB to 4.8 MiB (96.2%).
+- The benchmark did not call OpenAI or Pinecone and required no credentials.
+
+### Remaining blockers and risks
+
+- Cross-platform release artifacts remain unbuilt. Packaging stages both binaries, but only the current platform can be validated locally.
+- Custom `includeExtensions`, `excludeGlobs`, or `maxFileSizeBytes` stay on TypeScript until a v2 native contract has a demonstrated caller and parity fixture.
+- Provider migration needs recorded, provider-neutral fixtures for messages, tool calls, retries, errors, tracing, and streaming plus an explicit secrets policy. Live model output is nondeterministic, so a latency-only comparison would not establish correctness.
+- Retrieval quality was not re-benchmarked because chunk content and metadata are identical after order normalization and the embedding/query stages are unchanged.
+
 ## 2026-11-16 — Phase 3 hybrid CLI boundary
 
 ### Decision

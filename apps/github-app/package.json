@@ -10,6 +10,7 @@
     "build": "tsup",
     "start": "node dist/index.js",
     "lint": "biome check .",
+    "test": "vitest run",
     "test:setup": "tsx scripts/test-setup.ts",
     "test:compile": "tsc --noEmit",
     "test:server": "tsx scripts/test-server.ts",
