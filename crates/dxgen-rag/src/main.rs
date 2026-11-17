@@ -223,16 +223,24 @@ fn requires_utf16_fallback(text: &str, separators: &[&str], chunk_size: usize) -
         .enumerate()
         .find(|(_, separator)| separator.is_empty() || text.contains(**separator))
         .unwrap_or((separators.len() - 1, &""));
-    let next = (separator_index + 1 < separators.len())
-        .then_some(&separators[separator_index + 1..]);
+    let next =
+        (separator_index + 1 < separators.len()).then_some(&separators[separator_index + 1..]);
+    if separator.is_empty()
+        && js_len(text) >= chunk_size
+        && text.chars().any(|value| value.len_utf16() == 2)
+    {
+        return true;
+    }
 
-    split_on_separator(text, separator).into_iter().any(|split| {
-        js_len(&split) >= chunk_size
-            && next.map_or_else(
-                || split.chars().any(|value| value.len_utf16() == 2),
-                |next| requires_utf16_fallback(&split, next, chunk_size),
-            )
-    })
+    split_on_separator(text, separator)
+        .into_iter()
+        .any(|split| {
+            js_len(&split) >= chunk_size
+                && next.map_or_else(
+                    || split.chars().any(|value| value.len_utf16() == 2),
+                    |next| requires_utf16_fallback(&split, next, chunk_size),
+                )
+        })
 }
 
 fn metadata(
@@ -310,7 +318,9 @@ fn chunk_project(
     let mut chunks = Vec::new();
     for file in scan_project(root)? {
         if requires_utf16_fallback(&file.content, SEPARATORS, chunk_size) {
-            return Err("DXGEN_RAG_UNSUPPORTED_UTF16_SPLIT: use the TypeScript fallback".to_string());
+            return Err(
+                "DXGEN_RAG_UNSUPPORTED_UTF16_SPLIT: use the TypeScript fallback".to_string(),
+            );
         }
         let raw_chunks = split_text(&file.content, SEPARATORS, chunk_size, chunk_overlap);
         let chunk_count = raw_chunks.len();
@@ -319,7 +329,7 @@ fn chunk_project(
             let relative_start = file.content[search_cursor..].find(&text);
             let start = relative_start.map_or(0, |value| search_cursor + value);
             if relative_start.is_some() {
-                search_cursor = start + text.len();
+                search_cursor = start + text.chars().next().map(char::len_utf8).unwrap_or_default();
             }
             chunks.push(FileChunk {
                 id: format!("{}:{chunk_index}", file.relative_path),
@@ -415,6 +425,6 @@ mod tests {
     #[test]
     fn detects_a_hard_split_that_would_separate_utf16_surrogates() {
         assert!(requires_utf16_fallback("ab🌎cd", SEPARATORS, 3));
-        assert!(!requires_utf16_fallback("ab 🌎 cd", SEPARATORS, 3));
+        assert!(!requires_utf16_fallback("ab 🌎 cd", SEPARATORS, 10));
     }
 }
