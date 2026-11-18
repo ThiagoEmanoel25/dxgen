@@ -1,5 +1,42 @@
 # DXGen Rust Migration Decisions
 
+## 2026-11-17 — Incremental embeddings accepted; parallel scan rejected
+
+### Decision
+
+- TypeScript and Rust now emit SHA-256 file and chunk hashes with exact parity.
+- Pinecone vector IDs stay stable across content changes. Sync fetches stored content-hash and embedding-configuration metadata before calling OpenAI, so unchanged chunks skip embeddings while changed chunks overwrite the existing ID without duplication.
+- Full replacement uploads changed vectors before deleting stale IDs and reports `totalCount`, `upsertedCount`, `skippedCount`, and `deletedCount`.
+- Parallel scanning was rejected on the measured `packages/` corpus: 12.26 ms median versus 9.93 ms sequential, a roughly 23% regression. The simpler sequential walker remains.
+- A four-platform GitHub Actions matrix now stages Linux x64, Windows x64, macOS Intel, and macOS ARM npm tarballs and verifies their native contents. No automatic publication was added; external installation still requires a workspace-package publication or bundling decision.
+
+### Evidence
+
+- Passed: `npm test --workspace @repo/rag` (10 tests).
+- Passed: `npm run test:rag-parity` with file and chunk hashes.
+- Passed: `cargo test -p dxgen-rag` and Clippy with warnings denied.
+- Benchmark: Rust scan/chunk/hash median 12.43 ms versus 285.84 ms TypeScript; `docs/benchmarks/2026-11-17-rag-hashes.md`.
+- Cross-platform CI execution remains pending.
+
+## 2026-11-16 — Rust `cl100k_base` tokenizer boundary accepted
+
+### Decision
+
+- `dxgen-rag --tokenize` provides a batch JSON boundary using `cl100k_base`, the encoding used by the configured `text-embedding-3-small` model.
+- Exact token-ID parity passed against the installed `js-tiktoken` reference, including Unicode, code, long repeated input, and literal special-token markers.
+- The benchmark gate passed: Rust reduced median wall time from 301.86 ms to 61.08 ms (79.8%) and peak RSS from 208.0 MiB to 29.6 MiB (85.8%) across 42,043 tokens.
+- Production remains on character-based chunk boundaries. Token-aware chunking is a separate semantic migration because it changes embedded text, vector IDs, retrieval results, and reindex requirements.
+
+### Evidence
+
+- Passed: `npm run test:tokenizer-parity`.
+- Passed: `cargo test -p dxgen-rag` (4 tests).
+- Benchmark: `docs/benchmarks/2026-11-16-tokenizers.md`.
+
+### Next gate
+
+Build a retrieval-quality fixture with representative queries and expected source files, then compare character chunks with token-budgeted chunks before changing the production index.
+
 ## 2026-11-16 — Phase 4 local RAG accepted; Phase 5 providers retained
 
 ### Decision

@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-11-17T02:10:43.074Z",
+  "protocol": {
+    "warmups": 3,
+    "runs": 20,
+    "order": "alternating",
+    "boundary": "JSON stdin/stdout"
+  },
+  "corpus": {
+    "chunks": 168,
+    "inputBytes": 184786,
+    "tokenCount": 42043
+  },
+  "javascript": {
+    "medianWallSeconds": 0.301863834,
+    "p95WallSeconds": 0.348741625,
+    "medianCpuSeconds": 0.36,
+    "peakRssBytes": 218120192
+  },
+  "rust": {
+    "medianWallSeconds": 0.061079958,
+    "p95WallSeconds": 0.0646045,
+    "medianCpuSeconds": 0.05,
+    "peakRssBytes": 31047680
+  }
+}

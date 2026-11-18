@@ -1,0 +1,62 @@
+{
+  "generatedAt": "2026-11-17T03:41:43.991Z",
+  "protocol": {
+    "warmups": 3,
+    "runs": 20,
+    "filesystemCache": "warm",
+    "order": "alternating"
+  },
+  "environment": {
+    "platform": "darwin arm64",
+    "os": "26.4.1",
+    "cpu": "Apple M1 Pro",
+    "logicalCores": 10,
+    "memoryBytes": 34359738368,
+    "node": "v24.21.0",
+    "npm": "11.19.0",
+    "rust": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "sourceRevision": "3deccfc8bd184a73d55d73b15f172212a51b1e35",
+    "rustBinaryBytes": 5009680,
+    "nodeExecutableBytes": 247417680
+  },
+  "results": [
+    {
+      "repository": "fixture",
+      "revision": "3deccfc8bd184a73d55d73b15f172212a51b1e35",
+      "chunkCount": 7,
+      "outputBytes": 4419,
+      "outputSha256": "3a2ab738674af228eba43e492320b7d05ce9cdfce1e436d90dfbf126b02351dd",
+      "typescript": {
+        "medianWallSeconds": 0.270647541,
+        "p95WallSeconds": 0.315321875,
+        "medianCpuSeconds": 0.45999999999999996,
+        "peakRssBytes": 132595712
+      },
+      "rust": {
+        "medianWallSeconds": 0.005903,
+        "p95WallSeconds": 0.00604075,
+        "medianCpuSeconds": 0,
+        "peakRssBytes": 3948544
+      }
+    },
+    {
+      "repository": "packages",
+      "revision": "3deccfc8bd184a73d55d73b15f172212a51b1e35",
+      "chunkCount": 171,
+      "outputBytes": 291619,
+      "outputSha256": "c0735a327e6afa90e820ffb62bb6689c85c0639a35acd0def83a54b204839da8",
+      "typescript": {
+        "medianWallSeconds": 0.285843625,
+        "p95WallSeconds": 0.368712292,
+        "medianCpuSeconds": 0.49,
+        "peakRssBytes": 136560640
+      },
+      "rust": {
+        "medianWallSeconds": 0.012425292,
+        "p95WallSeconds": 0.014985625,
+        "medianCpuSeconds": 0,
+        "peakRssBytes": 5586944
+      }
+    }
+  ]
+}

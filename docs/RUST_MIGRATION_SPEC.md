@@ -30,6 +30,10 @@ The first implementation must reproduce the existing TypeScript `ProjectContext`
 | Native RAG scan + chunk | Done | `npm run test:rag-parity`; `docs/benchmarks/2026-11-16-rag.md` |
 | RAG integration and fallback | Done | `npm test --workspace @repo/rag`; `npm test --workspace @dxgen/cli` |
 | AI generation/provider evaluation | Done, retained in TypeScript | `docs/RUST_MIGRATION_DECISIONS.md` |
+| `cl100k_base` tokenizer parity and benchmark | Done, native boundary accepted | `npm run test:tokenizer-parity`; `docs/benchmarks/2026-11-16-tokenizers.md` |
+| Content hashes and incremental embeddings | Done | `npm test --workspace @repo/rag`; `docs/benchmarks/2026-11-17-rag-hashes.md` |
+| Parallel file processing evaluation | Rejected after benchmark | 12.26 ms parallel vs 9.93 ms sequential on `packages/` |
+| Cross-platform native artifact workflow | Implemented, CI execution pending | `.github/workflows/native-cli.yml` |
 
 Update this table when a step is completed. A step is not complete without a command, test, or result file linked in the Evidence column.
 
@@ -225,6 +229,20 @@ The Phase 4 gate is the Phase 1 local-work gate applied separately: exact normal
 No Rust AI subprocess was added. The selected documentation generator is called directly; an extra LLM agent call is not used to repeat the wizard's routing decision. Generators still depend directly on LangChain message types, OpenAI behavior, environment-loaded credentials, tracing metadata, and provider errors. Moving prompt formatting alone would add JSON serialization and process startup without owning a meaningful unit of work; moving providers would require a new SDK, credential, retry, streaming, and observability contract. Without deterministic provider fixtures or approved live credentials, claiming parity would be unsafe.
 
 The native RAG boundary currently performs recursive **character** chunking, not model-token (BPE) tokenization. A tokenization migration needs its own parity fixture against the exact encoding used by the embedding and chat models before performance is compared.
+
+### Phase 6 tokenizer boundary
+
+`dxgen-rag --tokenize` accepts `{"texts":["..."]}` on standard input and emits schema v1 token IDs using `cl100k_base`. The JavaScript reference uses `js-tiktoken`; the Rust candidate uses `tiktoken-rs`. Parity compares complete token-ID arrays, not only token counts.
+
+The local benchmark gate passed: Rust reduced median wall time by 79.8% and peak RSS by 85.8% on 42,043 tokens. This accepts Rust for future local token-budget work but does not authorize changing production chunk boundaries. Token-aware chunking requires retrieval-quality fixtures and a safe Pinecone reindex plan because it changes embedded text and vector IDs.
+
+### Phase 7 incremental indexing and release artifacts
+
+Both chunkers emit SHA-256 hashes for the full file and each chunk. Pinecone vector IDs remain stable by project, path, and chunk index; stored metadata carries the content hash plus embedding model/dimensions fingerprint. Sync lists IDs and fetches that metadata before creating embeddings, skips unchanged chunks, overwrites changed chunks at the stable ID, and only then deletes stale IDs. `SyncSummary` reports total, upserted, skipped, and deleted counts.
+
+A bounded parallel walker was evaluated on the stable `packages/` corpus and rejected: its 12.26 ms median regressed the 9.93 ms sequential median by about 23%. The sequential implementation remains because thread and lock overhead exceeds the available I/O gain on this workload.
+
+`.github/workflows/native-cli.yml` builds and exercises native binaries on Linux x64, Windows x64, macOS Intel, and macOS ARM, then verifies both binaries are present in an npm tarball. Local validation covers only macOS ARM; the workflow must complete before cross-platform distribution is marked done. The tarball is not standalone: external installation still depends on publishing or bundling the workspace packages referenced by the CLI.
 
 ## 11. Benchmark result template
 
