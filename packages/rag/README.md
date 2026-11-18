@@ -12,9 +12,9 @@ Pinecone, and retrieval always remain in TypeScript.
 ## Features
 
 - File system scanner with configurable extensions & ignore globs.
-- Chunking via LangChain `RecursiveCharacterTextSplitter` with source metadata
-  (path, chunk index, line ranges).
-- Pinecone sync helpers for both incremental updates and full namespace resets.
+- Character chunking with path, line range, file SHA-256, and chunk SHA-256 metadata.
+- Incremental Pinecone sync that skips unchanged embeddings and removes stale
+  vectors only after replacement vectors are stored.
 - Pinecone-backed LangChain retriever with optional fallback for hybrid flows.
 - High-level `runRagPipeline` helper that can `sync` (scan→chunk→index) or run
   read-only retrieval depending on CLI flags.
@@ -57,13 +57,16 @@ const { documents, syncSummary } = await runRagPipeline({
   context,
   sync: { enabled: true, fullReindex: true },
 });
+
+console.log(syncSummary);
+// { totalCount, upsertedCount, skippedCount, deletedCount, ... }
 ```
 
 ### CLI workflow reference
 
-- `dxgen sync`: sets `sync.enabled=true` and optionally `fullReindex` when the
-  user requests a clean refresh. Chunks are stored in Pinecone namespace
-  `dxgen-{userId}-{projectId}`.
+- `dxgen sync`: lists existing vector IDs and fetches their hash metadata.
+  Unchanged chunks skip OpenAI embeddings; changed chunks overwrite the same
+  stable IDs before stale vectors are removed.
 - `dxgen generate`: skips ingestion, instantiates the retriever, and streams the
   documents to the LangGraph chain chosen by the agent.
 
@@ -77,13 +80,13 @@ const pinecone = {
 };
 ```
 
-Namespaces default to `dxgen-{userId}-{projectId}` but can be overridden via
-`pinecone.namespace`.
+Namespaces use a readable user prefix plus a SHA-256 identity hash and can be
+overridden via `pinecone.namespace`.
 
 ## Testing
 
 ```
-npm run test --workspace=@dxgen/rag
+npm test --workspace @repo/rag
 ```
 
 Vitest covers chunk metadata extraction plus the retriever’s Pinecone + fallback
