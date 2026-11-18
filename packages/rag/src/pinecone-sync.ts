@@ -7,7 +7,7 @@ import { createEmbeddings } from "./embeddings.js";
 import { getIndexForContext } from "./pinecone-utils.js";
 import type { FileChunk, SyncOptions, SyncSummary } from "./types.js";
 
-const chunkVectorId = (chunk: FileChunk, options: SyncOptions) =>
+export const chunkVectorId = (chunk: FileChunk, options: SyncOptions) =>
   crypto
     .createHash("sha256")
     .update(
@@ -16,7 +16,7 @@ const chunkVectorId = (chunk: FileChunk, options: SyncOptions) =>
         options.context.projectId,
         chunk.metadata.relativePath,
         String(chunk.metadata.chunkIndex),
-      ].join(":"),
+      ].join("\0"),
     )
     .digest("hex");
 
@@ -26,10 +26,18 @@ const buildMetadata = (chunk: FileChunk, options: SyncOptions) => {
     projectId: options.context.projectId,
     text: chunk.text,
     relativePath: chunk.metadata.relativePath,
+    fileHash: chunk.metadata.fileHash,
+    contentHash: chunk.metadata.contentHash,
     chunkIndex: chunk.metadata.chunkIndex,
     chunkCount: chunk.metadata.chunkCount,
     startLine: chunk.metadata.startLine,
     endLine: chunk.metadata.endLine,
+    embeddingFingerprint: [
+      options.embeddings?.model ??
+        process.env.RAG_EMBEDDING_MODEL ??
+        "text-embedding-3-small",
+      String(options.embeddings?.dimensions ?? "default"),
+    ].join(":"),
   };
 
   if (chunk.metadata.fileType) metadata.fileType = chunk.metadata.fileType;
@@ -136,19 +144,87 @@ const batchRecords = (
   return batches;
 };
 
+const listExistingVectorIds = async (
+  index: ReturnType<typeof getIndexForContext>["index"],
+) => {
+  const existingIds: string[] = [];
+  let paginationToken: string | undefined;
+  do {
+    const page = await index.listPaginated(
+      paginationToken ? { paginationToken } : undefined,
+    );
+    existingIds.push(
+      ...(page.vectors ?? [])
+        .map((vector) => vector.id)
+        .filter((id): id is string => typeof id === "string"),
+    );
+    paginationToken = page.pagination?.next;
+  } while (paginationToken);
+  return existingIds;
+};
+
+const fetchExistingMetadata = async (
+  index: ReturnType<typeof getIndexForContext>["index"],
+  ids: string[],
+) => {
+  const metadata = new Map<string, Record<string, unknown>>();
+  for (let offset = 0; offset < ids.length; offset += 1_000) {
+    const response = await index.fetch(ids.slice(offset, offset + 1_000));
+    for (const [id, record] of Object.entries(response.records)) {
+      metadata.set(id, record.metadata ?? {});
+    }
+  }
+  return metadata;
+};
+
 const prepareRecords = async (chunks: FileChunk[], options: SyncOptions) => {
-  const embeddings = createEmbeddings(options.embeddings);
-  const values = await embedChunks(chunks, embeddings);
   const { index, namespace } = getIndexForContext(
     options.pinecone,
     options.context,
   );
-  const records: PineconeRecord[] = values.map((vector, index) => ({
-    id: chunkVectorId(chunks[index], options),
-    values: vector,
-    metadata: buildMetadata(chunks[index], options),
+  const existingIds = await listExistingVectorIds(index);
+  const existingIdSet = new Set(existingIds);
+  const candidates = chunks.map((chunk) => ({
+    chunk,
+    id: chunkVectorId(chunk, options),
   }));
-  return { index, namespace, records };
+  const existingMetadata = await fetchExistingMetadata(
+    index,
+    candidates.map(({ id }) => id).filter((id) => existingIdSet.has(id)),
+  );
+  const expectedEmbeddingFingerprint = [
+    options.embeddings?.model ??
+      process.env.RAG_EMBEDDING_MODEL ??
+      "text-embedding-3-small",
+    String(options.embeddings?.dimensions ?? "default"),
+  ].join(":");
+  const pending = candidates.filter(({ chunk, id }) => {
+    const metadata = existingMetadata.get(id);
+    return (
+      metadata?.contentHash !== chunk.metadata.contentHash ||
+      metadata?.embeddingFingerprint !== expectedEmbeddingFingerprint
+    );
+  });
+  const values =
+    pending.length === 0
+      ? []
+      : await embedChunks(
+          pending.map(({ chunk }) => chunk),
+          createEmbeddings(options.embeddings),
+        );
+  const records: PineconeRecord[] = values.map((vector, index) => ({
+    id: pending[index].id,
+    values: vector,
+    metadata: buildMetadata(pending[index].chunk, options),
+  }));
+  return {
+    index,
+    namespace,
+    records,
+    existingIds,
+    currentIds: new Set(candidates.map(({ id }) => id)),
+    skippedCount: candidates.length - pending.length,
+  };
 };
 
 const upsertRecords = async (
@@ -191,44 +267,33 @@ export const findStaleVectorIds = (
 
 const deleteStaleRecords = async (
   index: Awaited<ReturnType<typeof prepareRecords>>["index"],
+  existingIds: string[],
   currentIds: Set<string>,
 ) => {
-  const existingIds: string[] = [];
-  let paginationToken: string | undefined;
-  do {
-    const page = await index.listPaginated(
-      paginationToken ? { paginationToken } : undefined,
-    );
-    existingIds.push(
-      ...(page.vectors ?? [])
-        .map((vector) => vector.id)
-        .filter((id): id is string => typeof id === "string"),
-    );
-    paginationToken = page.pagination?.next;
-  } while (paginationToken);
-
   const staleIds = findStaleVectorIds(existingIds, currentIds);
   for (let offset = 0; offset < staleIds.length; offset += 1_000) {
     await index.deleteMany(staleIds.slice(offset, offset + 1_000));
   }
+  return staleIds.length;
 };
 
 export async function buildIndex(
   chunks: FileChunk[],
   options: SyncOptions,
 ): Promise<SyncSummary> {
-  const { index, namespace, records } = await prepareRecords(chunks, options);
-
-  if (records.length === 0) {
-    return { index: options.pinecone.index, namespace, upsertedCount: 0 };
-  }
-
+  const { index, namespace, records, skippedCount } = await prepareRecords(
+    chunks,
+    options,
+  );
   const totalUpserted = await upsertRecords(index, records);
 
   return {
     index: options.pinecone.index,
     namespace,
+    totalCount: chunks.length,
     upsertedCount: totalUpserted,
+    skippedCount,
+    deletedCount: 0,
   };
 }
 
@@ -236,14 +301,33 @@ export async function replaceIndex(
   chunks: FileChunk[],
   options: SyncOptions,
 ): Promise<SyncSummary> {
-  const { index, namespace, records } = await prepareRecords(chunks, options);
+  const { index, namespace, records, existingIds, currentIds, skippedCount } =
+    await prepareRecords(chunks, options);
   if (records.length === 0) {
-    await resetPineconeNamespace(options);
-    return { index: options.pinecone.index, namespace, upsertedCount: 0 };
+    const deletedCount = await deleteStaleRecords(
+      index,
+      existingIds,
+      currentIds,
+    );
+    return {
+      index: options.pinecone.index,
+      namespace,
+      totalCount: chunks.length,
+      upsertedCount: 0,
+      skippedCount,
+      deletedCount,
+    };
   }
   const upsertedCount = await upsertRecords(index, records);
-  await deleteStaleRecords(index, new Set(records.map((record) => record.id)));
-  return { index: options.pinecone.index, namespace, upsertedCount };
+  const deletedCount = await deleteStaleRecords(index, existingIds, currentIds);
+  return {
+    index: options.pinecone.index,
+    namespace,
+    totalCount: chunks.length,
+    upsertedCount,
+    skippedCount,
+    deletedCount,
+  };
 }
 
 export async function syncChunksToPinecone(

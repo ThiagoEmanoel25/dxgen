@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import path from "node:path";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
@@ -9,6 +10,9 @@ const countLinesUntil = (text: string, index: number) => {
   const slice = text.slice(0, index);
   return slice.split(/\r?\n/).length;
 };
+
+const sha256 = (text: string) =>
+  crypto.createHash("sha256").update(text).digest("hex");
 
 const inferSemanticMetadata = (relativePath: string) => {
   const lower = relativePath.toLowerCase();
@@ -83,12 +87,14 @@ export async function chunkProjectFiles(
 
   for (const file of files) {
     const semantic = inferSemanticMetadata(file.relativePath);
+    const fileHash = sha256(file.content);
 
     const rawChunks = await splitter.splitText(file.content);
     const chunkCount = rawChunks.length;
     let searchCursor = 0;
 
     rawChunks.forEach((text, chunkIndex) => {
+      const contentHash = sha256(text);
       const start = file.content.indexOf(text, searchCursor);
       const end = start === -1 ? -1 : start + text.length;
       if (start !== -1) {
@@ -100,11 +106,13 @@ export async function chunkProjectFiles(
         end === -1 ? startLine : countLinesUntil(file.content, end);
 
       chunks.push({
-        id: `${file.relativePath}:${chunkIndex}`,
+        id: `${file.relativePath}:${chunkIndex}:${contentHash}`,
         text,
         metadata: {
           source: file.fullPath,
           relativePath: file.relativePath,
+          fileHash,
+          contentHash,
           chunkIndex,
           chunkCount,
           startLine,

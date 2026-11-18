@@ -18,6 +18,8 @@ const isFileChunk = (value: unknown): value is FileChunk =>
   isRecord(value.metadata) &&
   typeof value.metadata.source === "string" &&
   typeof value.metadata.relativePath === "string" &&
+  typeof value.metadata.fileHash === "string" &&
+  typeof value.metadata.contentHash === "string" &&
   typeof value.metadata.chunkIndex === "number" &&
   typeof value.metadata.chunkCount === "number" &&
   typeof value.metadata.startLine === "number" &&
