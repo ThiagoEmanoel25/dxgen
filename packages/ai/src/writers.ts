@@ -9,12 +9,6 @@ export interface WriteFileOptions {
    * Se false, pergunta ao usuário antes de sobrescrever
    */
   overwrite?: boolean;
-
-  /**
-   * Callback para perguntar ao usuário se deve sobrescrever um arquivo existente
-   * Retorna true para sobrescrever, false para cancelar
-   */
-  onFileExists?: (filePath: string) => Promise<boolean>;
 }
 
 export interface WriteResult {
@@ -84,26 +78,14 @@ export async function writeDocumentationFile(
     // Verifica se o arquivo já existe
     const exists = await fileExists(filePath);
 
+    // Never prompt from here: the caller owns the terminal by now. The CLI
+    // asks in the wizard, before the progress UI starts.
     if (exists && !options.overwrite) {
-      // Se não está em modo overwrite, pergunta ao usuário
-      if (options.onFileExists) {
-        const shouldOverwrite = await options.onFileExists(filePath);
-        if (!shouldOverwrite) {
-          return {
-            success: false,
-            filePath,
-            error: "Operação cancelada pelo usuário",
-          };
-        }
-      } else {
-        // Se não há callback, não sobrescreve por padrão
-        return {
-          success: false,
-          filePath,
-          error:
-            "Arquivo já existe. Use overwrite: true ou forneça onFileExists",
-        };
-      }
+      return {
+        success: false,
+        filePath,
+        error: `${filePath} already exists and overwriting was declined.`,
+      };
     }
 
     // Cria os diretórios necessários
@@ -133,25 +115,4 @@ export async function writeDocumentationFile(
       error: (error as Error).message,
     };
   }
-}
-
-/**
- * Função helper para perguntar ao usuário via prompts (para uso no CLI)
- */
-export async function createPromptFileExistsHandler(): Promise<
-  (filePath: string) => Promise<boolean>
-> {
-  // Importação dinâmica para evitar dependência direta do prompts no pacote
-  const prompts = await import("prompts");
-
-  return async (filePath: string): Promise<boolean> => {
-    const response = await prompts.default({
-      type: "confirm",
-      name: "overwrite",
-      message: `O arquivo ${filePath} já existe. Deseja sobrescrever?`,
-      initial: false,
-    });
-
-    return response.overwrite === true;
-  };
 }

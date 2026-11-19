@@ -1,5 +1,4 @@
 import {
-  createPromptFileExistsHandler,
   detectStack,
   runGenerateCommand,
   writeDocumentationFile,
@@ -198,7 +197,7 @@ export async function handleGenerate(): Promise<void> {
 
     // Writing file
     const writeResult = await writeDocumentationFile(request, result, {
-      onFileExists: await createPromptFileExistsHandler(),
+      overwrite: answers.overwrite === true,
     });
 
     if (!writeResult.success) {
