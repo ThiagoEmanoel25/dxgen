@@ -106,7 +106,10 @@ export async function chunkProjectFiles(
         end === -1 ? startLine : countLinesUntil(file.content, end);
 
       chunks.push({
-        id: `${file.relativePath}:${chunkIndex}:${contentHash}`,
+        // Stable identity, matching chunkVectorId. The content hash lives in
+        // metadata.contentHash; putting it here too gave one chunk two
+        // identities that disagreed on every edit.
+        id: `${file.relativePath}:${chunkIndex}`,
         text,
         metadata: {
           source: file.fullPath,

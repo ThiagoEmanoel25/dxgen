@@ -3,12 +3,12 @@ mod scanner;
 mod types;
 
 use std::env;
+#[cfg(feature = "tokenize")]
 use std::io::{self, Read};
 use std::path::PathBuf;
 
-use tiktoken_rs::cl100k_base;
-
 use chunker::chunk_project;
+#[cfg(feature = "tokenize")]
 use types::{TokenizeInput, TokenizeOutput};
 
 const DEFAULT_CHUNK_SIZE: usize = 1500;
@@ -20,6 +20,7 @@ enum Command {
         chunk_size: usize,
         chunk_overlap: usize,
     },
+    #[cfg(feature = "tokenize")]
     Tokenize,
 }
 
@@ -27,11 +28,14 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Command, String>
     let mut args = args.into_iter().peekable();
     if args.peek().is_some_and(|argument| argument == "--tokenize") {
         args.next();
+        #[cfg(feature = "tokenize")]
         return if args.next().is_none() {
             Ok(Command::Tokenize)
         } else {
             Err("Usage: dxgen-rag --tokenize < input.json".to_string())
         };
+        #[cfg(not(feature = "tokenize"))]
+        return Err("--tokenize requires a build with the `tokenize` feature enabled".to_string());
     }
     let mut root = None;
     let mut chunk_size = DEFAULT_CHUNK_SIZE;
@@ -70,8 +74,9 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Command, String>
         })
 }
 
+#[cfg(feature = "tokenize")]
 fn tokenize(input: TokenizeInput) -> Result<TokenizeOutput, String> {
-    let bpe = cl100k_base().map_err(|error| error.to_string())?;
+    let bpe = tiktoken_rs::cl100k_base().map_err(|error| error.to_string())?;
     Ok(TokenizeOutput {
         schema_version: 1,
         encoding: "cl100k_base",
@@ -90,6 +95,7 @@ fn run() -> Result<(), String> {
             chunk_size,
             chunk_overlap,
         } => serde_json::to_string(&chunk_project(&root, chunk_size, chunk_overlap)?),
+        #[cfg(feature = "tokenize")]
         Command::Tokenize => {
             let mut input = String::new();
             io::stdin()
@@ -111,7 +117,7 @@ fn main() {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "tokenize"))]
 mod tests {
     use super::*;
 

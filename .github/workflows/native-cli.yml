@@ -3,8 +3,11 @@ name: Native CLI artifacts
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - "v*"
+  pull_request:
 
 permissions:
   contents: read
@@ -49,9 +52,18 @@ jobs:
         shell: bash
         run: |
           cargo test --workspace
+          cargo test --workspace --features tokenize
+          npm test
           cargo build --release -p dxgen-analyze -p dxgen-rag
           ./target/release/dxgen-analyze${{ matrix.extension }} packages/ai/test/fixtures/baseline --max-depth 3 --format json > analyzer-output.json
           ./target/release/dxgen-rag${{ matrix.extension }} packages/ai/test/fixtures/baseline > rag-output.json
+
+      - name: TypeScript/Rust parity
+        shell: bash
+        run: |
+          npm run test:analyzer-parity
+          npm run test:rag-parity
+          npm run test:tokenizer-parity
 
       - name: Build and stage CLI
         shell: bash
@@ -64,8 +76,20 @@ jobs:
           tarball="${{ runner.temp }}/pack/$(npm pack "${{ runner.temp }}/dxgen-${{ matrix.platform }}-${{ matrix.arch }}" --pack-destination "${{ runner.temp }}/pack" | tail -n 1)"
           tar -tf "$tarball" | grep "native/${{ matrix.platform }}-${{ matrix.arch }}/dxgen-analyze${{ matrix.extension }}"
           tar -tf "$tarball" | grep "native/${{ matrix.platform }}-${{ matrix.arch }}/dxgen-rag${{ matrix.extension }}"
+          echo "tarball=$tarball" >> "$GITHUB_ENV"
+
+      - name: Install the tarball in an empty project
+        shell: bash
+        run: |
+          install_dir="${{ runner.temp }}/install-check"
+          mkdir -p "$install_dir"
+          cd "$install_dir"
+          npm init -y > /dev/null
+          npm install "$tarball"
+          ./node_modules/.bin/dxgen --version
 
       - uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
         with:
           name: dxgen-${{ matrix.platform }}-${{ matrix.arch }}
           path: ${{ runner.temp }}/pack/*.tgz

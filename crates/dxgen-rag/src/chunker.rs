@@ -7,11 +7,6 @@ use crate::types::{FileChunk, FileChunkMetadata, RagOutput, ScannedFile};
 
 const SEPARATORS: &[&str] = &["\n\n", "\n", " ", ""];
 
-struct ChunkHashes<'a> {
-    file: &'a str,
-    content: &'a str,
-}
-
 fn sha256(value: &str) -> String {
     format!("{:x}", Sha256::digest(value.as_bytes()))
 }
@@ -137,7 +132,8 @@ fn metadata(
     chunk_index: usize,
     chunk_count: usize,
     text: &str,
-    hashes: ChunkHashes<'_>,
+    file_hash: &str,
+    content_hash: &str,
     start: usize,
     found: bool,
 ) -> FileChunkMetadata {
@@ -184,8 +180,8 @@ fn metadata(
     FileChunkMetadata {
         source: file.full_path.clone(),
         relative_path: file.relative_path.clone(),
-        file_hash: hashes.file.to_string(),
-        content_hash: hashes.content.to_string(),
+        file_hash: file_hash.to_string(),
+        content_hash: content_hash.to_string(),
         chunk_index,
         chunk_count,
         start_line,
@@ -226,16 +222,14 @@ pub(crate) fn chunk_project(
                 search_cursor = start + text.chars().next().map(char::len_utf8).unwrap_or_default();
             }
             chunks.push(FileChunk {
-                id: format!("{}:{chunk_index}:{content_hash}", file.relative_path),
+                id: format!("{}:{chunk_index}", file.relative_path),
                 metadata: metadata(
                     &file,
                     chunk_index,
                     chunk_count,
                     &text,
-                    ChunkHashes {
-                        file: &file_hash,
-                        content: &content_hash,
-                    },
+                    &file_hash,
+                    &content_hash,
                     start,
                     relative_start.is_some(),
                 ),

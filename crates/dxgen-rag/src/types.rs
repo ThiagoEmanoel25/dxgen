@@ -1,4 +1,6 @@
-use serde::{Deserialize, Serialize};
+#[cfg(feature = "tokenize")]
+use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Clone)]
 pub(crate) struct ScannedFile {
@@ -40,11 +42,13 @@ pub(crate) struct FileChunkMetadata {
     pub(crate) is_ci_config: bool,
 }
 
+#[cfg(feature = "tokenize")]
 #[derive(Deserialize)]
 pub(crate) struct TokenizeInput {
     pub(crate) texts: Vec<String>,
 }
 
+#[cfg(feature = "tokenize")]
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct TokenizeOutput {

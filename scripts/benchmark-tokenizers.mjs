@@ -29,7 +29,9 @@ if (
 const root = process.cwd();
 const rustBinary = path.join(root, "target/release/dxgen-rag");
 if (!statSync(rustBinary).isFile()) {
-  throw new Error("Build Rust first: cargo build --release -p dxgen-rag");
+  throw new Error(
+    "Build Rust first: cargo build --release -p dxgen-rag --features tokenize",
+  );
 }
 const chunkResult = spawnSync(rustBinary, [path.resolve(repositoryPath)], {
   cwd: root,

@@ -21,6 +21,9 @@ describe("chunk hashes", () => {
     expect(same).toEqual(first);
     expect(changed.metadata.fileHash).not.toBe(first.metadata.fileHash);
     expect(changed.metadata.contentHash).not.toBe(first.metadata.contentHash);
-    expect(changed.id).not.toBe(first.id);
+    // The id is the chunk's identity and must not move when content does:
+    // Pinecone derives its vector id from the same path and index.
+    expect(changed.id).toBe(first.id);
+    expect(changed.id).toBe("index.ts:0");
   });
 });

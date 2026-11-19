@@ -35,6 +35,9 @@ const rust = run(process.env.CARGO || "cargo", [
   "--quiet",
   "-p",
   "dxgen-rag",
+  // --tokenize is not compiled into released binaries.
+  "--features",
+  "tokenize",
   "--",
   "--tokenize",
 ]);

@@ -5,6 +5,8 @@
  * RAG pipeline and document generation, keeping API keys secure on the server.
  */
 
+import type { FileChunk, SyncSummary } from "@repo/rag";
+
 const EDGE_TIMEOUT_MS = 30_000;
 
 const getEdgeConfig = () => {
@@ -19,26 +21,7 @@ const getEdgeConfig = () => {
 };
 
 export interface RAGPipelineRequest {
-  chunks: Array<{
-    id: string;
-    text: string;
-    metadata: {
-      source: string;
-      relativePath: string;
-      fileHash: string;
-      contentHash: string;
-      chunkIndex: number;
-      chunkCount: number;
-      startLine: number;
-      endLine: number;
-      fileType?: "code" | "config" | "docs" | "test" | "other";
-      isConfig?: boolean;
-      isPackageJson?: boolean;
-      isReadme?: boolean;
-      isEnvExample?: boolean;
-      isCiConfig?: boolean;
-    };
-  }>;
+  chunks: FileChunk[];
   query: string;
   prContext: {
     repoFullName: string;
@@ -63,13 +46,9 @@ export interface RAGPipelineResponse {
       [key: string]: unknown;
     };
   }>;
-  syncSummary?: {
-    totalCount?: number;
-    upsertedCount?: number;
-    skippedCount?: number;
-    deletedCount?: number;
-    [key: string]: unknown;
-  };
+  // Partial because this is a response from an external service: the edge
+  // function may send fewer fields than the local pipeline produces.
+  syncSummary?: Partial<SyncSummary>;
 }
 
 export interface GenerateSummaryRequest {
