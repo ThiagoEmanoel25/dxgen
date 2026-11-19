@@ -1,12 +1,13 @@
 #!/usr/bin/env tsx
+
 /**
  * Script para testar webhook manualmente
  * Simula um evento pull_request.opened
  */
 
-import { config } from "dotenv";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { config } from "dotenv";
 import { Probot } from "probot";
 import app from "../src/index.js";
 
@@ -94,7 +95,9 @@ async function testWebhook() {
     });
 
     console.log("\n✅ Webhook processado com sucesso!");
-    console.log("\n⚠️  Nota: Este é um teste básico. Para testar completamente,");
+    console.log(
+      "\n⚠️  Nota: Este é um teste básico. Para testar completamente,",
+    );
     console.log("   você precisa usar smee.io com um repositório real.");
   } catch (error) {
     console.error("\n❌ Erro ao processar webhook:");
@@ -104,4 +107,3 @@ async function testWebhook() {
 }
 
 testWebhook();
-

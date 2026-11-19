@@ -1,6 +1,6 @@
-import { globby } from "globby";
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { globby } from "globby";
 
 import {
   DEFAULT_EXCLUDES,

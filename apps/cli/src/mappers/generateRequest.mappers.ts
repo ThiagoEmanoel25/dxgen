@@ -4,7 +4,6 @@ import type { GenerateAnswers } from "../types/generate.types";
 export function mapGenerateAnswersToRequest(
   answers: GenerateAnswers,
 ): GenerateRequest {
-
   return {
     wizard: {
       outputDir: answers.outputDir,

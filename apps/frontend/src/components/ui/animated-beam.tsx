@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useId, useState } from "react";
+import type React from "react";
+import { useEffect, useId, useState } from "react";
 
 interface AnimatedBeamProps {
   containerRef: React.RefObject<HTMLElement>;
@@ -77,6 +78,7 @@ export function AnimatedBeam({
 
   return (
     <svg
+      aria-hidden="true"
       className={`pointer-events-none absolute inset-0 ${className || ""}`}
       width={svgDimensions.width}
       height={svgDimensions.height}

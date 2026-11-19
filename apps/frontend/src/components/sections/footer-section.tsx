@@ -1,5 +1,5 @@
-import { Footer } from "./footer";
 import { footerConfig } from "@/config/landing-page.config";
+import { Footer } from "./footer";
 
 export function FooterSection() {
   return (

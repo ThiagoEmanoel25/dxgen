@@ -10,4 +10,3 @@ export default defineConfig({
   skipNodeModulesBundle: true,
   external: ["probot"],
 });
-

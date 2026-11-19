@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 interface TerminalLine {
   type: "command" | "blank" | "prompt" | "status" | "success" | "final";
@@ -144,8 +144,14 @@ export function DemoSection() {
         {/* Terminal */}
         <motion.div
           initial={{ opacity: 0, scale: 0.97 }}
-          animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.97 }}
-          transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.15 }}
+          animate={
+            isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.97 }
+          }
+          transition={{
+            duration: 0.7,
+            ease: [0.25, 0.46, 0.45, 0.94],
+            delay: 0.15,
+          }}
           className="relative"
         >
           <div className="absolute -inset-1 bg-linear-to-r from-emerald-500/20 via-cyan-500/20 to-blue-500/20 rounded-xl blur-xl opacity-50" />

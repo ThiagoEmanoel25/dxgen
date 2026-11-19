@@ -4,11 +4,9 @@
  * Run with: npm run test:setup
  */
 
-import { existsSync } from "node:fs";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import { config } from "dotenv";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -57,15 +55,15 @@ function test(name: string, fn: () => boolean | string): void {
 test("Environment file exists", () => {
   const localEnvPath = join(rootDir, ".env");
   const monorepoEnvPath = join(monorepoRoot, ".env");
-  
+
   if (existsSync(localEnvPath)) {
     return true; // Found in app directory
   }
-  
+
   if (existsSync(monorepoEnvPath)) {
     return true; // Found in monorepo root
   }
-  
+
   return "Create a .env file in apps/github-app/ or in the monorepo root";
 });
 
@@ -93,7 +91,10 @@ test("Required environment variables are set", () => {
 
   // Validate PRIVATE_KEY format
   const privateKey = process.env.PRIVATE_KEY || "";
-  if (!privateKey.includes("BEGIN RSA PRIVATE KEY") && !privateKey.includes("BEGIN PRIVATE KEY")) {
+  if (
+    !privateKey.includes("BEGIN RSA PRIVATE KEY") &&
+    !privateKey.includes("BEGIN PRIVATE KEY")
+  ) {
     return "PRIVATE_KEY doesn't appear to be a valid RSA private key";
   }
 
@@ -106,7 +107,7 @@ test("Dependencies are installed", () => {
   const localNodeModules = join(rootDir, "node_modules");
   const monorepoRoot = join(rootDir, "../..");
   const monorepoNodeModules = join(monorepoRoot, "node_modules");
-  
+
   if (!existsSync(localNodeModules) && !existsSync(monorepoNodeModules)) {
     return "Run 'npm install' from monorepo root to install dependencies";
   }
@@ -210,7 +211,7 @@ test("Internal packages (@repo/ai, @repo/rag) are available", async () => {
 
 // Print results
 console.log("\n🧪 GitHub App Setup Test\n");
-console.log("=" .repeat(50));
+console.log("=".repeat(50));
 
 for (const result of results) {
   const icon = result.passed ? "✅" : "❌";
@@ -220,7 +221,7 @@ for (const result of results) {
   }
 }
 
-console.log("=" .repeat(50));
+console.log("=".repeat(50));
 
 const passed = results.filter((r) => r.passed).length;
 const total = results.length;
@@ -239,4 +240,3 @@ if (passed === total) {
   console.log("⚠️  Some tests failed. Please fix the issues above.");
   process.exit(1);
 }
-

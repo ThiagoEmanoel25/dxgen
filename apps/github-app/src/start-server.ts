@@ -2,10 +2,10 @@
  * Start Probot server manually
  */
 
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 // Load .env first
 import { config } from "dotenv";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -43,17 +43,21 @@ console.log(`   Webhook Path: /\n`);
 process.env.WEBHOOK_PATH = "/";
 
 // Use Probot's run function - it reads webhookPath from WEBHOOK_PATH env var
-run(app).then((server) => {
-  const actualPort = server.expressApp.get("port") || port;
-  console.log(`🚀 Probot server running on http://localhost:${actualPort}`);
-  console.log(`📡 Webhook endpoint: http://localhost:${actualPort}/`);
-  console.log(`\n✅ Server is running. Press Ctrl+C to stop.\n`);
-  console.log(`💡 IMPORTANTE: Reinicie o servidor se ainda estiver rodando!\n`);
-}).catch((error) => {
-  console.error("❌ Failed to start server:", error);
-  if (error instanceof Error && error.stack) {
-    console.error("\nStack trace:");
-    console.error(error.stack);
-  }
-  process.exit(1);
-});
+run(app)
+  .then((server) => {
+    const actualPort = server.expressApp.get("port") || port;
+    console.log(`🚀 Probot server running on http://localhost:${actualPort}`);
+    console.log(`📡 Webhook endpoint: http://localhost:${actualPort}/`);
+    console.log(`\n✅ Server is running. Press Ctrl+C to stop.\n`);
+    console.log(
+      `💡 IMPORTANTE: Reinicie o servidor se ainda estiver rodando!\n`,
+    );
+  })
+  .catch((error) => {
+    console.error("❌ Failed to start server:", error);
+    if (error instanceof Error && error.stack) {
+      console.error("\nStack trace:");
+      console.error(error.stack);
+    }
+    process.exit(1);
+  });

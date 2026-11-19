@@ -14,7 +14,10 @@ export interface OAuthServer {
   callbackUrl: string;
   useFrontend: boolean;
   waitForCallback: () => Promise<OAuthTokens>;
-  setStatus: (status: "success" | "not_allowed" | "error", message?: string) => void;
+  setStatus: (
+    status: "success" | "not_allowed" | "error",
+    message?: string,
+  ) => void;
   close: () => void;
 }
 
@@ -161,8 +164,11 @@ export async function startOAuthServer(
   let resolveCallback: (tokens: OAuthTokens) => void;
   let rejectCallback: (error: Error) => void;
 
-  let authStatus: { status: "pending" | "success" | "not_allowed" | "error"; message?: string } = {
-    status: "pending"
+  let authStatus: {
+    status: "pending" | "success" | "not_allowed" | "error";
+    message?: string;
+  } = {
+    status: "pending",
   };
 
   const callbackPromise = new Promise<OAuthTokens>((resolve, reject) => {
@@ -334,7 +340,10 @@ export async function startOAuthServer(
     callbackUrl,
     useFrontend,
     waitForCallback: () => callbackPromise,
-    setStatus: (status: "success" | "not_allowed" | "error", message?: string) => {
+    setStatus: (
+      status: "success" | "not_allowed" | "error",
+      message?: string,
+    ) => {
       authStatus = { status, message };
     },
     close: () => {

@@ -8,11 +8,7 @@
     "forceConsistentCasingInFileNames": true,
     "incremental": false,
     "isolatedModules": true,
-    "lib": [
-      "es2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["es2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleDetection": "force",
     "moduleResolution": "Bundler",
@@ -24,16 +20,9 @@
     "jsx": "react",
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ],
-      "@repo/*": [
-        "../../packages/*/src"
-      ]
+      "@/*": ["./*"],
+      "@repo/*": ["../../packages/*/src"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ]
+  "include": ["**/*.ts", "**/*.tsx"]
 }

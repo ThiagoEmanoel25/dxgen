@@ -194,13 +194,15 @@ export async function executeLoginFlow(
           }
           if (!silent) {
             console.log("\n You're not on the allowlist.");
-            console.log(`Visit ${process.env.FRONTEND_URL} to join the waitlist and request access.\n`);
+            console.log(
+              `Visit ${process.env.FRONTEND_URL} to join the waitlist and request access.\n`,
+            );
           }
           await supabase.auth.signOut();
 
           // Notify frontend about allowlist failure
           if (server) {
-            server.setStatus('not_allowed', "You're not on the allowlist");
+            server.setStatus("not_allowed", "You're not on the allowlist");
           }
 
           return {
@@ -229,7 +231,7 @@ export async function executeLoginFlow(
 
         // Notify frontend about allowlist check error
         if (server) {
-          server.setStatus('error', (allowlistError as Error).message);
+          server.setStatus("error", (allowlistError as Error).message);
         }
 
         return {
@@ -314,7 +316,7 @@ export async function executeLoginFlow(
 
       // Notify frontend about successful authentication
       if (server) {
-        server.setStatus('success');
+        server.setStatus("success");
       }
 
       return {
@@ -362,7 +364,7 @@ export async function executeLoginFlow(
 
     // Notify frontend about error
     if (server) {
-      server.setStatus('error', errorMessage);
+      server.setStatus("error", errorMessage);
     }
 
     return {
@@ -373,7 +375,7 @@ export async function executeLoginFlow(
   } finally {
     if (server) {
       if (server.useFrontend) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
       }
       server.close();
     }

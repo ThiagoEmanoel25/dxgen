@@ -4,8 +4,8 @@ import "./env-loader.js";
 
 import type { Probot } from "probot";
 import { handlePROpened } from "./handlers/pr-opened.handler";
-import { validateEnvironment } from "./utils/env-validation";
 import { shouldUseEdgeFunctions } from "./utils/edge-function-client";
+import { validateEnvironment } from "./utils/env-validation";
 
 /**
  * Main Probot application

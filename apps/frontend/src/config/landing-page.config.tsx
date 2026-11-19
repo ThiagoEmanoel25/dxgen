@@ -19,11 +19,7 @@ export const pricingPlans = [
     price: "0",
     yearlyPrice: "0",
     period: "month",
-    features: [
-      "Basic documentation",
-      "Limited projects",
-      "Community support",
-    ],
+    features: ["Basic documentation", "Limited projects", "Community support"],
     description: "Perfect for getting started",
     buttonText: "Get Started",
     href: "/auth/signup",

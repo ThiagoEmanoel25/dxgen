@@ -1,12 +1,13 @@
 #!/usr/bin/env tsx
+
 /**
  * Test script to verify the server can start
  * This simulates Probot initialization without actually starting the server
  */
 
-import { config } from "dotenv";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { config } from "dotenv";
 import { Probot } from "probot";
 
 // Load .env from app directory or monorepo root
@@ -27,7 +28,9 @@ async function testServer() {
   const missing = required.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
-    console.error(`❌ Missing required environment variables: ${missing.join(", ")}`);
+    console.error(
+      `❌ Missing required environment variables: ${missing.join(", ")}`,
+    );
     console.error("   Please configure your .env file");
     process.exit(1);
   }
@@ -67,4 +70,3 @@ async function testServer() {
 }
 
 testServer();
-

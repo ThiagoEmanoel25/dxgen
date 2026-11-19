@@ -1,5 +1,5 @@
 import { Text } from "ink";
-import React from "react";
+import type React from "react";
 import { formatDuration } from "../utils/stage.utils";
 
 interface CompletionSummaryProps {

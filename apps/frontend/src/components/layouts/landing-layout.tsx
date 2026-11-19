@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 import { ShaderBackground } from "@/components/ui/shader-background";
 
 interface LandingLayoutProps {

@@ -50,9 +50,8 @@ export async function extractPRContext(
  */
 export function buildPRFocusedQuery(prContext: PRContext): string {
   const fileList = prContext.modifiedFiles.slice(0, 20).join(", ");
-  
+
   return `Retrieve context for a pull request that modifies the following files: ${fileList}. 
 Focus on: configuration files, entry points, related modules, and dependencies of these modified files.
 Pull request: "${prContext.title}"`;
 }
-

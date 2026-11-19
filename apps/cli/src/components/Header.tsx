@@ -1,6 +1,6 @@
 import gradient from "gradient-string";
 import { Box, Text } from "ink";
-import React from "react";
+import type React from "react";
 
 interface HeaderProps {
   title: string;

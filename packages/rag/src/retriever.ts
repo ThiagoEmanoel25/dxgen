@@ -1,8 +1,7 @@
 import { Document } from "@langchain/core/documents";
 import { BaseRetriever } from "@langchain/core/retrievers";
-
-import { getRagEnvConfig } from "./env.js";
 import { createEmbeddings } from "./embeddings.js";
+import { getRagEnvConfig } from "./env.js";
 import { getIndexForContext } from "./pinecone-utils.js";
 import type { RetrieverOptions } from "./types.js";
 

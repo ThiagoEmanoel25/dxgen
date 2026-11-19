@@ -1,6 +1,6 @@
 import { Text } from "ink";
 import Spinner from "ink-spinner";
-import React from "react";
+import type React from "react";
 
 interface SpinnerComponentProps {
   label?: string;

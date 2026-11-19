@@ -1,5 +1,6 @@
 import { Box } from "ink";
-import React, { useEffect, useState } from "react";
+import type React from "react";
+import { useEffect, useState } from "react";
 import type { ProgressState, Stage } from "../types/progress.types";
 import { initializeStages } from "../utils/stage.utils";
 import { GenerateView } from "./GenerateView";

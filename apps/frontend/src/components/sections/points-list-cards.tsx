@@ -1,7 +1,7 @@
 "use client";
 
-import { X, Check } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
+import { Check, X } from "lucide-react";
 
 const containerVariants: Variants = {
   hidden: {},
@@ -35,9 +35,9 @@ export function PointsListCards({ points, variant }: PointsListCardsProps) {
       viewport={{ once: true, amount: 0.5 }}
       className="space-y-3"
     >
-      {points.map((point, index) => (
+      {points.map((point) => (
         <motion.li
-          key={index}
+          key={point}
           variants={cardVariants}
           className={`flex items-start gap-3 rounded-xl border p-3 backdrop-blur-sm transition-colors ${
             isProblem

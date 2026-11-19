@@ -1,38 +1,38 @@
-'use client'
+"use client";
 
-import { useEffect, useState, useId } from 'react'
-import { motion, type Variants } from 'framer-motion'
-import SplitType from 'split-type'
+import { motion, type Variants } from "framer-motion";
+import { useEffect, useId, useState } from "react";
+import SplitType from "split-type";
 
 interface AnimatedTextProps {
-  text: string
-  as?: 'h1' | 'h2' | 'h3' | 'p' | 'span'
-  className?: string
-  delay?: number
-  stagger?: number
-  duration?: number
-  inView?: boolean
-  viewportAmount?: number
-  blur?: boolean
+  text: string;
+  as?: "h1" | "h2" | "h3" | "p" | "span";
+  className?: string;
+  delay?: number;
+  stagger?: number;
+  duration?: number;
+  inView?: boolean;
+  viewportAmount?: number;
+  blur?: boolean;
 }
 
 const lineVariants: Variants = {
   hidden: (blur: boolean) => ({
     opacity: 0,
     y: 30,
-    filter: blur ? 'blur(8px)' : 'blur(0px)',
+    filter: blur ? "blur(8px)" : "blur(0px)",
   }),
   visible: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
+    filter: "blur(0px)",
   },
-}
+};
 
 export function AnimatedText({
   text,
-  as: Tag = 'p',
-  className = '',
+  as: Tag = "p",
+  className = "",
   delay = 0,
   stagger = 0.12,
   duration = 0.7,
@@ -40,48 +40,50 @@ export function AnimatedText({
   viewportAmount = 0.8,
   blur = true,
 }: AnimatedTextProps) {
-  const [lines, setLines] = useState<string[]>([])
-  const [isReady, setIsReady] = useState(false)
-  const id = useId()
+  const [lines, setLines] = useState<string[]>([]);
+  const [isReady, setIsReady] = useState(false);
+  const id = useId();
 
   useEffect(() => {
     const splitText = () => {
-      const measureElement = document.createElement(Tag)
-      measureElement.className = className
-      measureElement.style.position = 'absolute'
-      measureElement.style.visibility = 'hidden'
-      measureElement.style.pointerEvents = 'none'
-      measureElement.textContent = text
-      document.body.appendChild(measureElement)
+      const measureElement = document.createElement(Tag);
+      measureElement.className = className;
+      measureElement.style.position = "absolute";
+      measureElement.style.visibility = "hidden";
+      measureElement.style.pointerEvents = "none";
+      measureElement.textContent = text;
+      document.body.appendChild(measureElement);
 
-      const split = new SplitType(measureElement, { types: 'lines' })
-      const splitLines = split.lines?.map((line) => line.textContent || '') || [text]
+      const split = new SplitType(measureElement, { types: "lines" });
+      const splitLines = split.lines?.map((line) => line.textContent || "") || [
+        text,
+      ];
 
-      document.body.removeChild(measureElement)
+      document.body.removeChild(measureElement);
 
-      setLines(splitLines)
-      setIsReady(true)
-    }
+      setLines(splitLines);
+      setIsReady(true);
+    };
 
     if (document.fonts) {
-      document.fonts.ready.then(splitText)
+      document.fonts.ready.then(splitText);
     } else {
-      splitText()
+      splitText();
     }
 
     const handleResize = () => {
-      setIsReady(false)
-      setLines([])
+      setIsReady(false);
+      setLines([]);
       if (document.fonts) {
-        document.fonts.ready.then(splitText)
+        document.fonts.ready.then(splitText);
       } else {
-        splitText()
+        splitText();
       }
-    }
+    };
 
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [text, className, Tag])
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [text, className, Tag]);
 
   const containerVariants: Variants = {
     hidden: {},
@@ -91,9 +93,9 @@ export function AnimatedText({
         delayChildren: delay,
       },
     },
-  }
+  };
 
-  const MotionTag = motion[Tag] as typeof motion.p
+  const MotionTag = motion[Tag] as typeof motion.p;
 
   return (
     <MotionTag
@@ -101,12 +103,16 @@ export function AnimatedText({
       variants={containerVariants}
       initial="hidden"
       {...(inView
-        ? { whileInView: 'visible', viewport: { once: true, amount: viewportAmount } }
-        : { animate: isReady ? 'visible' : 'hidden' })}
+        ? {
+            whileInView: "visible",
+            viewport: { once: true, amount: viewportAmount },
+          }
+        : { animate: isReady ? "visible" : "hidden" })}
     >
       {isReady ? (
         lines.map((line, index) => (
           <motion.span
+            // biome-ignore lint/suspicious/noArrayIndexKey: SplitType can emit identical lines, so position is the only stable identity.
             key={`${id}-${index}`}
             variants={lineVariants}
             custom={blur}
@@ -123,5 +129,5 @@ export function AnimatedText({
         <span style={{ opacity: 0 }}>{text}</span>
       )}
     </MotionTag>
-  )
+  );
 }

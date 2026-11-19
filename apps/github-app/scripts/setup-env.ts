@@ -4,12 +4,11 @@
  * Run with: npm run setup:env
  */
 
-import { existsSync, writeFileSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
-import * as readline from "node:readline/promises";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { stdin as input, stdout as output } from "node:process";
+import * as readline from "node:readline/promises";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,17 +30,17 @@ async function questionSecret(prompt: string): Promise<string> {
 function formatPrivateKey(key: string): string {
   // Remove any existing quotes
   key = key.trim().replace(/^["']|["']$/g, "");
-  
+
   // If it's already formatted with \n, return as is
   if (key.includes("\\n")) {
     return key;
   }
-  
+
   // If it's a multi-line string, convert newlines to \n
   if (key.includes("\n")) {
     return key.replace(/\n/g, "\\n");
   }
-  
+
   // If it's a single line, assume it's already formatted
   return key;
 }
@@ -53,7 +52,7 @@ async function main() {
   // Check if .env already exists
   if (existsSync(envPath)) {
     const overwrite = await question(
-      "⚠️  O arquivo .env já existe. Deseja sobrescrever? (s/N): "
+      "⚠️  O arquivo .env já existe. Deseja sobrescrever? (s/N): ",
     );
     if (overwrite.toLowerCase() !== "s" && overwrite.toLowerCase() !== "sim") {
       console.log("Operação cancelada.");
@@ -83,7 +82,11 @@ async function main() {
   let privateKey = privateKeyInput.trim();
 
   // If it's a file path, read it
-  if (privateKey.startsWith("/") || privateKey.startsWith("./") || privateKey.startsWith("../")) {
+  if (
+    privateKey.startsWith("/") ||
+    privateKey.startsWith("./") ||
+    privateKey.startsWith("../")
+  ) {
     if (existsSync(privateKey)) {
       console.log(`   📄 Lendo arquivo: ${privateKey}`);
       privateKey = readFileSync(privateKey, "utf-8");
@@ -98,12 +101,18 @@ async function main() {
   privateKey = formatPrivateKey(privateKey);
 
   if (!privateKey.includes("BEGIN") || !privateKey.includes("PRIVATE KEY")) {
-    console.warn("   ⚠️  Aviso: A chave privada não parece estar no formato correto.");
-    console.warn("   Certifique-se de que inclui 'BEGIN PRIVATE KEY' ou 'BEGIN RSA PRIVATE KEY'");
+    console.warn(
+      "   ⚠️  Aviso: A chave privada não parece estar no formato correto.",
+    );
+    console.warn(
+      "   Certifique-se de que inclui 'BEGIN PRIVATE KEY' ou 'BEGIN RSA PRIVATE KEY'",
+    );
   }
 
   // WEBHOOK_SECRET
-  const webhookSecret = await questionSecret("\n3. WEBHOOK_SECRET (segredo do webhook): ");
+  const webhookSecret = await questionSecret(
+    "\n3. WEBHOOK_SECRET (segredo do webhook): ",
+  );
   if (!webhookSecret) {
     console.error("❌ WEBHOOK_SECRET é obrigatório!");
     rl.close();
@@ -111,22 +120,34 @@ async function main() {
   }
 
   // OPENAI_API_KEY
-  const openaiKey = await questionSecret("\n4. OPENAI_API_KEY (chave da API OpenAI): ");
+  const openaiKey = await questionSecret(
+    "\n4. OPENAI_API_KEY (chave da API OpenAI): ",
+  );
   if (!openaiKey) {
-    console.warn("   ⚠️  OPENAI_API_KEY não fornecida. Você precisará configurá-la depois.");
+    console.warn(
+      "   ⚠️  OPENAI_API_KEY não fornecida. Você precisará configurá-la depois.",
+    );
   }
 
   // PINECONE_API_KEY
-  const pineconeKey = await questionSecret("\n5. PINECONE_API_KEY (chave da API Pinecone): ");
+  const pineconeKey = await questionSecret(
+    "\n5. PINECONE_API_KEY (chave da API Pinecone): ",
+  );
   if (!pineconeKey) {
-    console.warn("   ⚠️  PINECONE_API_KEY não fornecida. Você precisará configurá-la depois.");
+    console.warn(
+      "   ⚠️  PINECONE_API_KEY não fornecida. Você precisará configurá-la depois.",
+    );
   }
 
   // PORT (optional)
-  const port = await question("\n6. PORT (porta do servidor, padrão: 3000): ") || "3000";
+  const port =
+    (await question("\n6. PORT (porta do servidor, padrão: 3000): ")) || "3000";
 
   // NODE_ENV
-  const nodeEnv = await question("\n7. NODE_ENV (development/production, padrão: development): ") || "development";
+  const nodeEnv =
+    (await question(
+      "\n7. NODE_ENV (development/production, padrão: development): ",
+    )) || "development";
 
   // Build .env content
   const envContent = `# GitHub App Configuration
@@ -151,10 +172,16 @@ LOG_LEVEL=info
   // Verify
   console.log("📋 Resumo da configuração:");
   console.log(`   APP_ID: ${appId}`);
-  console.log(`   PRIVATE_KEY: ${privateKey.substring(0, 50)}... (${privateKey.length} caracteres)`);
+  console.log(
+    `   PRIVATE_KEY: ${privateKey.substring(0, 50)}... (${privateKey.length} caracteres)`,
+  );
   console.log(`   WEBHOOK_SECRET: ${webhookSecret.substring(0, 10)}...`);
-  console.log(`   OPENAI_API_KEY: ${openaiKey ? "✅ Configurada" : "❌ Não configurada"}`);
-  console.log(`   PINECONE_API_KEY: ${pineconeKey ? "✅ Configurada" : "❌ Não configurada"}`);
+  console.log(
+    `   OPENAI_API_KEY: ${openaiKey ? "✅ Configurada" : "❌ Não configurada"}`,
+  );
+  console.log(
+    `   PINECONE_API_KEY: ${pineconeKey ? "✅ Configurada" : "❌ Não configurada"}`,
+  );
   console.log(`   PORT: ${port}`);
   console.log(`   NODE_ENV: ${nodeEnv}\n`);
 
@@ -162,7 +189,9 @@ LOG_LEVEL=info
   console.log("\nPróximos passos:");
   console.log("1. Execute: npm run test:setup (para verificar a configuração)");
   console.log("2. Execute: npm run test:server (para testar o servidor)");
-  console.log("3. Execute: npm run dev (para iniciar em modo desenvolvimento)\n");
+  console.log(
+    "3. Execute: npm run dev (para iniciar em modo desenvolvimento)\n",
+  );
 
   rl.close();
 }
@@ -172,4 +201,3 @@ main().catch((error) => {
   rl.close();
   process.exit(1);
 });
-

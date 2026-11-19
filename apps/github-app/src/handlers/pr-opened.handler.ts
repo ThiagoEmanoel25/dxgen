@@ -1,21 +1,21 @@
 // IMPORTANT: Load .env before importing @repo/ai which uses environment variables
 import "../env-loader.js";
 
+import type { GenerateResult } from "@repo/ai";
+import { buildProjectContext, generateSummary } from "@repo/ai";
 import type { Context } from "probot";
-import { extractPRContext } from "../utils/pr-context";
-import { getRagDocumentsForPR } from "../utils/rag-integration";
-import { generateSummary, buildProjectContext } from "@repo/ai";
 import {
-  formatSummaryComment,
   formatErrorComment,
+  formatSummaryComment,
 } from "../utils/comment-formatter";
-import { cloneRepository } from "../utils/repo-clone";
 import {
   callGenerateSummary,
-  shouldUseEdgeFunctions,
   type GenerateSummaryRequest,
+  shouldUseEdgeFunctions,
 } from "../utils/edge-function-client";
-import type { GenerateResult } from "@repo/ai";
+import { extractPRContext } from "../utils/pr-context";
+import { getRagDocumentsForPR } from "../utils/rag-integration";
+import { cloneRepository } from "../utils/repo-clone";
 
 /**
  * Handle pull_request.opened event

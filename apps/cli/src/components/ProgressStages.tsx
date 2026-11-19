@@ -1,6 +1,6 @@
 import { Box, Text } from "ink";
 import Spinner from "ink-spinner";
-import React from "react";
+import type React from "react";
 import type { Stage } from "../types/progress.types";
 import { getStatusColor, getStatusSymbol } from "../utils/stage.utils";
 

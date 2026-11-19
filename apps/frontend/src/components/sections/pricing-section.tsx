@@ -1,5 +1,5 @@
-import { Pricing } from "./pricing";
 import { pricingPlans } from "@/config/landing-page.config";
+import { Pricing } from "./pricing";
 
 export function PricingSection() {
   return (

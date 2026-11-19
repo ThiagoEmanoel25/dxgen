@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, type Variants } from "framer-motion";
 import {
   BadgeDollarSign,
   FileOutput,
@@ -10,7 +11,6 @@ import {
   Workflow,
   Zap,
 } from "lucide-react";
-import { motion, type Variants } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const containerVariants: Variants = {

@@ -32,11 +32,18 @@ export function createReadmeGeneratorTool(
     },
     {
       name: "generate_readme",
-      description: "Generates a professional README.md file for the project. This is always appropriate for any codebase and provides overview, setup instructions, and usage examples.",
+      description:
+        "Generates a professional README.md file for the project. This is always appropriate for any codebase and provides overview, setup instructions, and usage examples.",
       schema: z.object({
         rootPath: z.string().describe("The root path of the project"),
-        outputDir: z.string().describe("The output directory for documentation"),
-        style: z.string().describe("The desired documentation style (e.g., 'technical', 'beginner-friendly', 'comprehensive')"),
+        outputDir: z
+          .string()
+          .describe("The output directory for documentation"),
+        style: z
+          .string()
+          .describe(
+            "The desired documentation style (e.g., 'technical', 'beginner-friendly', 'comprehensive')",
+          ),
       }),
     },
   );
@@ -66,10 +73,13 @@ export function createApiDocsGeneratorTool(
     },
     {
       name: "generate_api_docs",
-      description: "Generates comprehensive API documentation including endpoints, request/response schemas, authentication, and examples. IMPORTANT: Only use this if detect_api_endpoints confirmed the project has API routes. Otherwise, suggest README instead.",
+      description:
+        "Generates comprehensive API documentation including endpoints, request/response schemas, authentication, and examples. IMPORTANT: Only use this if detect_api_endpoints confirmed the project has API routes. Otherwise, suggest README instead.",
       schema: z.object({
         rootPath: z.string().describe("The root path of the project"),
-        outputDir: z.string().describe("The output directory for documentation"),
+        outputDir: z
+          .string()
+          .describe("The output directory for documentation"),
         style: z.string().describe("The desired documentation style"),
       }),
     },
@@ -100,10 +110,13 @@ export function createDiagramsGeneratorTool(
     },
     {
       name: "generate_diagrams",
-      description: "Generates architecture diagrams using Mermaid syntax showing system structure, component relationships, and data flow. Most valuable for moderate to complex projects with multiple services or modules.",
+      description:
+        "Generates architecture diagrams using Mermaid syntax showing system structure, component relationships, and data flow. Most valuable for moderate to complex projects with multiple services or modules.",
       schema: z.object({
         rootPath: z.string().describe("The root path of the project"),
-        outputDir: z.string().describe("The output directory for documentation"),
+        outputDir: z
+          .string()
+          .describe("The output directory for documentation"),
         style: z.string().describe("The desired documentation style"),
       }),
     },
@@ -134,13 +147,15 @@ export function createSummaryGeneratorTool(
     },
     {
       name: "generate_summary",
-      description: "Generates a comprehensive repository summary covering technology stack, architecture, key features, and development workflow. Useful for onboarding or high-level project understanding.",
+      description:
+        "Generates a comprehensive repository summary covering technology stack, architecture, key features, and development workflow. Useful for onboarding or high-level project understanding.",
       schema: z.object({
         rootPath: z.string().describe("The root path of the project"),
-        outputDir: z.string().describe("The output directory for documentation"),
+        outputDir: z
+          .string()
+          .describe("The output directory for documentation"),
         style: z.string().describe("The desired documentation style"),
       }),
     },
   );
 }
-

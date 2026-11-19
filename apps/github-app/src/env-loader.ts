@@ -2,9 +2,10 @@
  * Environment loader - MUST be imported first before any other modules
  * that use environment variables
  */
-import { config } from "dotenv";
-import { join, dirname } from "node:path";
+
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { config } from "dotenv";
 
 // Load .env from app directory or monorepo root
 const __filename = fileURLToPath(import.meta.url);
@@ -16,7 +17,3 @@ const monorepoRoot = join(appRoot, "../..");
 // This ensures environment variables are available before any other imports
 config({ path: join(appRoot, ".env") });
 config({ path: join(monorepoRoot, ".env") });
-
-// Re-export dotenv/config to ensure it's loaded
-export {};
-

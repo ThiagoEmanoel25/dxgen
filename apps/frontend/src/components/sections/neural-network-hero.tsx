@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, type Variants } from "framer-motion";
-import { DemoSection } from "./demo-section";
 import { AnimatedText } from "@/components/ui/animated-text";
+import { DemoSection } from "./demo-section";
 
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 8 },

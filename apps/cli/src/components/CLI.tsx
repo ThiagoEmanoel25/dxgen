@@ -1,5 +1,5 @@
 import { Box, Text } from "ink";
-import React from "react";
+import type React from "react";
 import { Banner } from "./Banner";
 
 export const CLI: React.FC = () => {

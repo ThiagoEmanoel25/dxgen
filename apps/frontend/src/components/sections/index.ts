@@ -1,16 +1,10 @@
 export { LandingLayout } from "../layouts/landing-layout";
-
-export { HeroSection } from "./hero-section";
-
-export { ProblemSolutionSection } from "./problem-solution";
-
-export { HowItWorks } from "./how-it-works";
-export { FeaturesSection } from "./features-bento";
-
-export { Testimonials } from "./testimonials-columns-1";
-
-export { PricingSection } from "./pricing-section";
-export { FAQSection } from "./faq-section";
-
 export { CTASection } from "./cta-section";
+export { FAQSection } from "./faq-section";
+export { FeaturesSection } from "./features-bento";
 export { FooterSection } from "./footer-section";
+export { HeroSection } from "./hero-section";
+export { HowItWorks } from "./how-it-works";
+export { PricingSection } from "./pricing-section";
+export { ProblemSolutionSection } from "./problem-solution";
+export { Testimonials } from "./testimonials-columns-1";

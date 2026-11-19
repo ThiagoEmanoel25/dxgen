@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef } from "react";
-import { Brain, FileCode, FileJson, FileText, Network } from "lucide-react";
 import { motion, type Variants } from "framer-motion";
+import { Brain, FileCode, FileJson, FileText, Network } from "lucide-react";
+import { useRef } from "react";
 import { AnimatedBeam } from "../ui/animated-beam";
-import { PointsListSimple } from "./points-list-simple";
 import { PointsListCards } from "./points-list-cards";
+import { PointsListSimple } from "./points-list-simple";
 
 const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30, filter: "blur(8px)" },
@@ -52,7 +52,8 @@ export function ProblemSolutionSection({
   const outputRef2 = useRef<HTMLDivElement>(null);
   const outputRef3 = useRef<HTMLDivElement>(null);
 
-  const PointsList = listVariant === "cards" ? PointsListCards : PointsListSimple;
+  const PointsList =
+    listVariant === "cards" ? PointsListCards : PointsListSimple;
 
   return (
     <section className="relative py-20 lg:py-28 overflow-hidden">
@@ -135,7 +136,11 @@ export function ProblemSolutionSection({
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.2 }}
+          transition={{
+            duration: 0.8,
+            ease: [0.25, 0.46, 0.45, 0.94],
+            delay: 0.2,
+          }}
           ref={containerRef}
           className="relative mt-16 lg:mt-24 h-48 md:h-64"
         >
