@@ -1,0 +1,72 @@
+name: Native CLI artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux
+            arch: x64
+            extension: ""
+          - runner: windows-2025
+            platform: win32
+            arch: x64
+            extension: .exe
+          - runner: macos-15-intel
+            platform: darwin
+            arch: x64
+            extension: ""
+          - runner: macos-15
+            platform: darwin
+            arch: arm64
+            extension: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test and build native binaries
+        shell: bash
+        run: |
+          cargo test --workspace
+          cargo build --release -p dxgen-analyze -p dxgen-rag
+          ./target/release/dxgen-analyze${{ matrix.extension }} packages/ai/test/fixtures/baseline --max-depth 3 --format json > analyzer-output.json
+          ./target/release/dxgen-rag${{ matrix.extension }} packages/ai/test/fixtures/baseline > rag-output.json
+
+      - name: Build and stage CLI
+        shell: bash
+        run: |
+          npm run build --workspace @repo/ai
+          npm run build --workspace @dxgen/cli
+          node apps/cli/dist/index.js --version
+          npm run package:native --workspace @dxgen/cli -- --output "${{ runner.temp }}/dxgen-${{ matrix.platform }}-${{ matrix.arch }}"
+          mkdir -p "${{ runner.temp }}/pack"
+          tarball="${{ runner.temp }}/pack/$(npm pack "${{ runner.temp }}/dxgen-${{ matrix.platform }}-${{ matrix.arch }}" --pack-destination "${{ runner.temp }}/pack" | tail -n 1)"
+          tar -tf "$tarball" | grep "native/${{ matrix.platform }}-${{ matrix.arch }}/dxgen-analyze${{ matrix.extension }}"
+          tar -tf "$tarball" | grep "native/${{ matrix.platform }}-${{ matrix.arch }}/dxgen-rag${{ matrix.extension }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dxgen-${{ matrix.platform }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/pack/*.tgz
+          if-no-files-found: error

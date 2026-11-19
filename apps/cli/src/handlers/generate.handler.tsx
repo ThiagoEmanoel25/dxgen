@@ -165,7 +165,7 @@ export async function handleGenerate(): Promise<void> {
       details: stackParts.length > 0 ? stackParts.join(" + ") : undefined,
     });
 
-    const chunkCount = syncSummary?.upsertedCount ?? documents.length;
+    const chunkCount = syncSummary?.totalCount ?? documents.length;
     updateStage?.("indexing", {
       status: "completed",
       details: `${chunkCount} chunks`,
