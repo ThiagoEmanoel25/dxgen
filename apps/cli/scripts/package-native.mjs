@@ -69,6 +69,16 @@ try {
     await readFile(path.join(cliRoot, "package.json"), "utf8"),
   );
   packageJson.files = ["dist", "native"];
+  // Workspace packages are bundled into dist and never published, so a
+  // consumer running `npm install` on this tarball could not resolve them.
+  // Stripping them here keeps that true if one is ever added back.
+  for (const field of ["dependencies", "devDependencies", "peerDependencies"]) {
+    const deps = packageJson[field];
+    if (!deps) continue;
+    for (const name of Object.keys(deps)) {
+      if (name.startsWith("@repo/")) delete deps[name];
+    }
+  }
   await writeFile(
     path.join(stagingPath, "package.json"),
     `${JSON.stringify(packageJson, null, 2)}\n`,

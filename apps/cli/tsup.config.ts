@@ -13,6 +13,10 @@ export default defineConfig({
   outDir: "dist",
   platform: "node",
   target: "node18",
-  // Mark workspace packages and problematic dependencies as external
-  external: ["@repo/rag", "@repo/ai", "globby", "fast-glob"],
+  // Bundle our own workspace code and nothing else. Third-party packages stay
+  // external: several (the Pinecone client, for one) are CommonJS and break
+  // with "Dynamic require is not supported" when inlined into ESM, and
+  // puppeteer needs its postinstall to fetch Chromium.
+  external: [/^[^./]/],
+  noExternal: ["@repo/ai", "@repo/rag"],
 });
