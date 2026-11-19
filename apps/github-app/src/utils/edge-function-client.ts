@@ -25,6 +25,8 @@ export interface RAGPipelineRequest {
     metadata: {
       source: string;
       relativePath: string;
+      fileHash: string;
+      contentHash: string;
       chunkIndex: number;
       chunkCount: number;
       startLine: number;
@@ -62,7 +64,10 @@ export interface RAGPipelineResponse {
     };
   }>;
   syncSummary?: {
+    totalCount?: number;
     upsertedCount?: number;
+    skippedCount?: number;
+    deletedCount?: number;
     [key: string]: unknown;
   };
 }
