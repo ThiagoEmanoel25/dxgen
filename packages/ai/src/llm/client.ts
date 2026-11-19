@@ -1,6 +1,9 @@
 import type { Document } from "@langchain/core/documents";
 import { ChatOpenAI } from "@langchain/openai";
-import "dotenv/config";
+// No "dotenv/config" here: it re-read .env on import and undid whatever the
+// application had already decided about the environment -- including the
+// tracing flags the CLI clears before rendering. Both consumers (the CLI and
+// the GitHub app) load .env themselves, first thing.
 import { getAiEnvConfig } from "../env.js";
 import type { FormatContextOptions, InvokeOptions } from "../types";
 

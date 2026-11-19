@@ -6,6 +6,31 @@ import dotenv from "dotenv";
 
 let envLoaded = false;
 
+/**
+ * LangSmith tracing is observability for whoever develops dxgen, not for the
+ * person running it. Its client reports every failure through console.warn,
+ * and each of those repaints the whole progress UI -- an unreachable or
+ * unauthorized endpoint turns a normal run into pages of stack noise.
+ *
+ * Opt back in with DXGEN_TRACE=1.
+ */
+function silenceTracingUnlessRequested(): void {
+  if (process.env.DXGEN_TRACE === "1") {
+    return;
+  }
+
+  // langsmith reads both prefixes and only treats the exact string "true" as
+  // on, so clearing them is enough.
+  for (const name of [
+    "LANGSMITH_TRACING",
+    "LANGSMITH_TRACING_V2",
+    "LANGCHAIN_TRACING",
+    "LANGCHAIN_TRACING_V2",
+  ]) {
+    delete process.env[name];
+  }
+}
+
 export function loadEnv(): void {
   if (envLoaded) {
     return;
@@ -20,20 +45,15 @@ export function loadEnv(): void {
     join(homedir(), ".dxgen", ".env"),
   ];
 
-  let loaded = false;
-  for (const envPath of envPaths) {
-    if (existsSync(envPath)) {
-      dotenv.config({ path: envPath });
-      envLoaded = true;
-      loaded = true;
-      return;
-    }
-  }
+  const envPath = envPaths.find((candidate) => existsSync(candidate));
 
-  if (!loaded && process.env.NODE_ENV !== "production") {
+  if (envPath) {
+    dotenv.config({ path: envPath });
+  } else if (process.env.NODE_ENV !== "production") {
     console.warn("⚠️  No .env file found. Using environment variables only.");
   }
 
+  silenceTracingUnlessRequested();
   envLoaded = true;
 }
 

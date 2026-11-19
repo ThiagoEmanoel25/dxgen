@@ -30,9 +30,20 @@ export const GenerateApp: React.FC<GenerateAppProps> = ({
     onProgressInit({
       updateStage: (stageId: string, updates: Partial<Stage>) => {
         setProgressState((prev) => {
-          const newStages = prev.stages.map((stage) =>
-            stage.id === stageId ? { ...stage, ...updates } : stage,
-          );
+          const newStages = prev.stages.map((stage) => {
+            if (stage.id !== stageId) {
+              return stage;
+            }
+            // Stamped here so a stage that runs for minutes can show how long
+            // it has been running, instead of a spinner that looks hung.
+            const started =
+              updates.status === "in_progress" ? Date.now() : stage.startTime;
+            const ended =
+              updates.status === "completed" || updates.status === "failed"
+                ? Date.now()
+                : stage.endTime;
+            return { ...stage, startTime: started, endTime: ended, ...updates };
+          });
           return {
             ...prev,
             stages: newStages,
