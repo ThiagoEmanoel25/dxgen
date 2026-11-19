@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import prompts from "prompts";
+import { devAuthUser } from "../dev-auth";
 import { SupabaseConfigError, supabase } from "../supabase";
 import { executeLoginFlow } from "./login-flow";
 
@@ -109,6 +110,11 @@ export async function promptLogin(
 }
 
 export async function requireAuth(options: AuthOptions = {}): Promise<User> {
+  const devUser = devAuthUser();
+  if (devUser) {
+    return devUser;
+  }
+
   let user = await checkAuth();
 
   if (!user) {

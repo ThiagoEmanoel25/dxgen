@@ -1,3 +1,4 @@
+import { isDevAuthBypassEnabled } from "./dev-auth";
 import { supabase } from "./supabase";
 
 export interface UsageStatus {
@@ -15,6 +16,15 @@ export interface UsageResult {
 }
 
 export async function checkUsageLimits(userId: string): Promise<UsageStatus> {
+  if (isDevAuthBypassEnabled()) {
+    return {
+      can_generate: true,
+      docs_used: 0,
+      limit_value: Number.POSITIVE_INFINITY,
+      days_until_reset: 0,
+    };
+  }
+
   const { data, error } = await supabase.rpc("check_and_reset_monthly_usage", {
     user_id: userId,
   });
@@ -41,6 +51,15 @@ export async function checkUsageLimits(userId: string): Promise<UsageStatus> {
 }
 
 export async function incrementUsage(userId: string): Promise<UsageResult> {
+  if (isDevAuthBypassEnabled()) {
+    return {
+      success: true,
+      new_count: 0,
+      limit_reached: false,
+      limit_value: Number.POSITIVE_INFINITY,
+    };
+  }
+
   const { data, error } = await supabase.rpc("increment_doc_usage", {
     user_id: userId,
   });
